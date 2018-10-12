@@ -103,7 +103,7 @@ namespace UnityControllerForTello
         public void StartProps()
         {
             Debug.Log("Start Prop");
-
+            Tello.controllerState.setAxis(.9f, -.2f, -.9f, -.2f);
             //Tello.controllerState.setAxis(-.9f, -.2f, .9f, -.2f);
             //flying = true;
             startingProps = true;

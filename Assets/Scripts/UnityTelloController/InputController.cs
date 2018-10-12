@@ -5,7 +5,7 @@ using TelloLib;
 
 namespace UnityControllerForTello
 {
-    public class InputController : MonoBehaviour
+    public class InputController :MonoBehaviour
     {
         public enum InputType { Thrustmaster16000, Keyboard, Rift, ThrustmasterThrottle }
         public InputType inputType = InputType.Keyboard;
@@ -28,7 +28,7 @@ namespace UnityControllerForTello
         public void CustomStart()
         {
             targetDrone = sceneManager.telloManager.transform;
-            if (sceneManager.sceneType == SceneManager.SceneType.SimOnly)
+            if(sceneManager.sceneType == SceneManager.SceneType.SimOnly)
             {
                 targetDrone = sceneManager.simulator.transform;
             }
@@ -43,13 +43,14 @@ namespace UnityControllerForTello
         public void ToggleAutoPilot(bool active)
         {
             autoPilotActive = active;
-            if (autoPilotActive)
+            if(autoPilotActive)
             {
-                if (proximityPIDX == null)
+                if(proximityPIDX == null)
                 {
-                    proximityPIDX = new PidController(PIDxP, PIDxI, PIDxD, 1, -1);
-                    proximityPIDY = new PidController(PIDyP, PIDyI, PIDyD, 1, -1);
-                    proximityPIDZ = new PidController(PIDzP, PIDzI, PIDzD, 1, -1);
+                    Debug.Log("set pid values");
+                    proximityPIDX = new PidController(PIDxP,PIDxI,PIDxD,1,-1);
+                    proximityPIDY = new PidController(PIDyP,PIDyI,PIDyD,1,-1);
+                    proximityPIDZ = new PidController(PIDzP,PIDzI,PIDzD,1,-1);
                     proximityPIDX.SetPoint = 0;
                     proximityPIDY.SetPoint = 0;
                     proximityPIDZ.SetPoint = 0;
@@ -57,9 +58,9 @@ namespace UnityControllerForTello
             }
         }
         public int deltaTime1;
-        void RunAutoPilot()
+        void RunAutoPilot(float yaw)
         {
-            System.TimeSpan deltaTime = new System.TimeSpan(0, 0, 0, 0,(int)(Time.deltaTime * 1000)); //0, 0, 0, (int)Time.deltaTime);
+            System.TimeSpan deltaTime = new System.TimeSpan(0,0,0,0,(int)(Time.deltaTime * 1000)); //0, 0, 0, (int)Time.deltaTime);
             deltaTime1 = (int)(Time.deltaTime * 1000);
             var targetOffset = targetDrone.position - autoPilotTarget.position;
             //Debug.Log((int)Time.deltaTime);
@@ -73,20 +74,44 @@ namespace UnityControllerForTello
             proximityPIDZ.ProcessVariable = targetOffset.z;
             double trgtPitch = proximityPIDZ.ControlVariable(deltaTime);
 
-            SetControllerState(inputYaw, (float)trgtElv, (float)trgtRoll, (float)trgtPitch);
+            SetControllerState(yaw,(float)trgtElv,(float)trgtRoll,(float)trgtPitch);
         }
 
-        void SetControllerState(float yaw, float elv, float roll, float pitch)
+        void SetControllerState(float yaw,float elv,float roll,float pitch)
         {
-            if (float.IsNaN(elv))
+            if(float.IsNaN(elv))
                 elv = 0;
-            if (float.IsNaN(yaw))
+            if(float.IsNaN(yaw))
                 yaw = 0;
-            if (float.IsNaN(pitch))
+            if(float.IsNaN(pitch))
                 pitch = 0;
-            if (float.IsNaN(roll))
-               roll = 0;
+            if(float.IsNaN(roll))
+                roll = 0;
 
+            if(headLess)
+            {
+                var xDir = new Vector3(roll,0,0);
+                var yDir = new Vector3(0,0,pitch);
+
+                var headLessDir = (xDir + yDir) / 2;
+                // newObject.eulerAngles = headLessDir;
+
+                var headLessDirX = Vector3.Project(headLessDir,targetDrone.right.normalized);
+                roll = headLessDirX.x * 2;
+                var headLessDirY = Vector3.Project(headLessDir,targetDrone.forward.normalized);
+                pitch = headLessDirY.z * 2;
+
+                var crossProduct = Vector3.Dot(Vector3.forward,targetDrone.forward.normalized);
+
+                if(crossProduct < 0)
+                {
+                    roll = -roll;
+                    pitch = -pitch;
+                }
+            }
+
+            //if (speed < 0)
+            //    speed = .1f;
             inputElv = elv * speed;
             inputRoll = roll * speed;
             inputPitch = pitch * speed;
@@ -100,7 +125,7 @@ namespace UnityControllerForTello
             float rx = 0f;
             float ry = 0f;
 
-            switch (inputType)
+            switch(inputType)
             {
                 case InputType.Keyboard:
                     lx = Input.GetAxis("Keyboard Yaw");
@@ -131,11 +156,11 @@ namespace UnityControllerForTello
                     break;
             }
 
-            if (speed == 0)
+            if(speed == 0)
             {
                 speed = .5f;
             }
-            else if (speed < 0)
+            else if(speed < 0)
             {
                 speed = 1 + speed;
                 speed /= 2;
@@ -146,41 +171,16 @@ namespace UnityControllerForTello
                 speed += .5f;
             }
 
-            if (inputType != InputType.ThrustmasterThrottle)
+            if(inputType != InputType.ThrustmasterThrottle)
                 speed = 1;
 
-            if (headLess)
+            if(autoPilotTarget & autoPilotActive)
             {
-                var xDir = new Vector3(rx, 0, 0);
-                var yDir = new Vector3(0, 0, ry);
-
-                var headLessDir = (xDir + yDir) / 2;
-                // newObject.eulerAngles = headLessDir;
-
-                var headLessDirX = Vector3.Project(headLessDir, targetDrone.right.normalized);
-                rx = headLessDirX.x * 2;
-                var headLessDirY = Vector3.Project(headLessDir, targetDrone.forward.normalized);
-                ry = headLessDirY.z * 2;
-
-                var crossProduct = Vector3.Dot(Vector3.forward, targetDrone.forward.normalized);
-
-                if (crossProduct < 0)
-                {
-                    rx = -rx;
-                    ry = -ry;
-                }
+                RunAutoPilot(lx);
             }
-
-            //if (speed < 0)
-            //    speed = .1f;
-            inputElv = ly * speed;
-            inputRoll = rx * speed;
-            inputPitch = ry * speed;
-            inputYaw = lx * speed;
-
-            if (autoPilotTarget & autoPilotActive)
+            else
             {
-                RunAutoPilot();
+                SetControllerState(lx,ly,rx,ry);
             }
 
             //if (inputType == InputType.ThrustmasterThrottle)
