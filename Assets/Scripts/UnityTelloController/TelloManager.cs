@@ -134,6 +134,15 @@ namespace UnityControllerForTello
             //        startingProps = false;
             //    }
             //}
+            if (updateReceived)
+            {
+                UpdateLocalState();
+
+                if (flying & tracking)
+                    Tracktello();
+                updateReceived = false;
+            }
+
 
             if (Tello.state.flying & !flying)
                 OnFlyBegin();
@@ -187,7 +196,7 @@ namespace UnityControllerForTello
             transform.eulerAngles = new Vector3(0, yaw, 0);
             pitch = pitch * (180 / Mathf.PI);
             roll = roll * (180 / Mathf.PI);
-            telloModel.localEulerAngles = new Vector3(pitch, 0, roll);
+            telloModel.localEulerAngles = new Vector3(pitch - 90, 0, roll);
         }
 
         void CreateFlightPoint()
@@ -219,11 +228,8 @@ namespace UnityControllerForTello
         //Dealing with telloLib
         private void Tello_onUpdate(int cmdID)
         {
-            //updateReceived = true;
-            UpdateLocalState();
+            updateReceived = true;
 
-            if (flying & tracking)
-                Tracktello();
         }
         //This just saves all the tello variables locally for viewing in the inspector
         public void UpdateLocalState()
