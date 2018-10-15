@@ -18,6 +18,11 @@ namespace UnityControllerForTello
         Camera display2Cam;
         public InputController inputController { get; private set; }
 
+        private void Pause()
+        {
+            Tello.land();
+        }
+
         override protected void Awake()
         {
             base.Awake();
@@ -49,7 +54,7 @@ namespace UnityControllerForTello
             {
                 simulator.gameObject.SetActive(false);
             }
-            else if(sceneType == SceneType.SimOnly)
+            else if (sceneType == SceneType.SimOnly)
             {
                 display2Cam.transform.SetParent(simulator.transform);
             }
@@ -66,13 +71,18 @@ namespace UnityControllerForTello
             if (sceneType != SceneType.FlyOnly)
                 simulator.CustomStart(this);
 
-            inputController.ToggleAutoPilot(true);
+         //   inputController.ToggleAutoPilot(true);
         }
 
         private void Update()
         {
             connectionState = Tello.connectionState;
             inputController.CheckInputs();
+
+            if (Input.GetKeyDown(KeyCode.Q))
+            {
+                inputController.ToggleAutoPilot(!inputController.autoPilotActive);
+            }
 
             if (Tello.connected & sceneType != SceneType.SimOnly)
             {
@@ -94,7 +104,10 @@ namespace UnityControllerForTello
                 telloManager.CustomUpdate();
             }
             if (sceneType != SceneType.FlyOnly)
+            {
                 simulator.CustomUpdate();
+            }
+
         }
 
         void BeginTracking()
@@ -113,10 +126,10 @@ namespace UnityControllerForTello
 
         void OnApplicationQuit()
         {
-            if(sceneType != SceneType.SimOnly)
+            if (sceneType != SceneType.SimOnly)
             {
                 telloManager.CustomOnApplicationQuit();
-            }          
+            }
         }
 
 

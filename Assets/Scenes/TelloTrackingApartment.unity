@@ -220,7 +220,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab181b599e4feeb4fa1e4d4c66d89586, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sceneType: 0
+  sceneType: 1
   connectionState: 0
 --- !u!4 &13445132
 Transform:
@@ -255,7 +255,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e4787c3498c8dfd4ba455948282b8bd1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  inputType: 3
+  inputType: 1
   inputPitch: 0
   inputYaw: 0
   inputRoll: 0
@@ -263,16 +263,16 @@ MonoBehaviour:
   flipDir: 0
   flipDirX: 0
   speed: 0
-  headLess: 0
+  headLess: 1
   PIDxP: 0.1
   PIDxI: 0
-  PIDxD: 5
+  PIDxD: 0
   PIDyP: 0.1
   PIDyI: 0
-  PIDyD: 5
+  PIDyD: 0
   PIDzP: 0.1
   PIDzI: 0
-  PIDzD: 5
+  PIDzD: 0
   autoPilotTarget: {fileID: 0}
   deltaTime1: 0
 --- !u!1 &39486190

@@ -32,11 +32,14 @@ namespace UnityControllerForTello
             {
                 targetDrone = sceneManager.simulator.transform;
             }
+
+            //newObject = new GameObject().transform;
+            //newObject.position = Vector3.zero;
         }
         public float PIDxP = .1f, PIDxI = 0, PIDxD = .0f;
         public float PIDyP = .1f, PIDyI = 0, PIDyD = .0f;
         public float PIDzP = .1f, PIDzI = 0, PIDzD = .0f;
-        bool autoPilotActive = false;
+        public bool autoPilotActive { get; private set; } = false;
         public Transform autoPilotTarget;
         PidController proximityPIDX, proximityPIDY, proximityPIDZ;
 
@@ -79,34 +82,40 @@ namespace UnityControllerForTello
 
         void SetControllerState(float yaw,float elv,float roll,float pitch)
         {
-            if(float.IsNaN(elv))
-                elv = 0;
-            if(float.IsNaN(yaw))
-                yaw = 0;
-            if(float.IsNaN(pitch))
-                pitch = 0;
-            if(float.IsNaN(roll))
-                roll = 0;
+            //if(float.IsNaN(elv))
+            //    elv = 0;
+            //if(float.IsNaN(yaw))
+            //    yaw = 0;
+            //if(float.IsNaN(pitch))
+            //    pitch = 0;
+            //if(float.IsNaN(roll))
+            //    roll = 0;
 
             if(headLess)
             {
                 var xDir = new Vector3(roll,0,0);
                 var yDir = new Vector3(0,0,pitch);
 
-                var headLessDir = (xDir + yDir) / 2;
-                // newObject.eulerAngles = headLessDir;
+                var headLessDir = transform.position + (xDir + yDir);
 
                 var headLessDirX = Vector3.Project(headLessDir,targetDrone.right.normalized);
-                roll = headLessDirX.x * 2;
-                var headLessDirY = Vector3.Project(headLessDir,targetDrone.forward.normalized);
-                pitch = headLessDirY.z * 2;
+                roll = headLessDirX.magnitude;
+                var headLessDirz = Vector3.Project(headLessDir,targetDrone.forward.normalized);
+                pitch = headLessDirz.magnitude;
 
-                var crossProduct = Vector3.Dot(Vector3.forward,targetDrone.forward.normalized);
+                var crossProduct = Vector3.Dot(headLessDirz, targetDrone.forward.normalized);
 
-                if(crossProduct < 0)
+                if (crossProduct < 0)
+                {
+                   // roll = -roll;
+                    pitch = -pitch;
+                }
+                crossProduct = Vector3.Dot(headLessDirX, targetDrone.right.normalized);
+
+                if (crossProduct < 0)
                 {
                     roll = -roll;
-                    pitch = -pitch;
+                   // pitch = -pitch;
                 }
             }
 
@@ -176,7 +185,14 @@ namespace UnityControllerForTello
 
             if(autoPilotTarget & autoPilotActive)
             {
-                RunAutoPilot(lx);
+                if(ly != 0 || rx != 0 || ry != 0)
+                {
+                    autoPilotActive = false;
+                }
+                else
+                {
+                    RunAutoPilot(lx);
+                }
             }
             else
             {
