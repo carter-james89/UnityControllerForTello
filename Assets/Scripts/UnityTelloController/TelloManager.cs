@@ -225,11 +225,13 @@ namespace UnityControllerForTello
                 Tello.requestIframe();
             }
         }
+        public float telloDeltaTime{get;private set; }
+        float prevDeltaTime = 0;
         //Dealing with telloLib
         private void Tello_onUpdate(int cmdID)
         {
             updateReceived = true;
-
+            telloDeltaTime = Time.time - prevDeltaTime;
         }
         //This just saves all the tello variables locally for viewing in the inspector
         public void UpdateLocalState()

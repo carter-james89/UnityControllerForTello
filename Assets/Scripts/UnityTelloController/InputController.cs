@@ -21,6 +21,8 @@ namespace UnityControllerForTello
 
         public bool headLess = false;
 
+        
+
         public void CustomAwake(SceneManager sceneManager)
         {
             this.sceneManager = sceneManager;
@@ -63,8 +65,9 @@ namespace UnityControllerForTello
         public int deltaTime1;
         void RunAutoPilot(float yaw)
         {
-            System.TimeSpan deltaTime = new System.TimeSpan(0,0,0,0,(int)(Time.deltaTime * 1000)); //0, 0, 0, (int)Time.deltaTime);
-            deltaTime1 = (int)(Time.deltaTime * 1000);
+           // System.TimeSpan deltaTime = new System.TimeSpan(0,0,0,0,(int)(Time.deltaTime * 1000)); //0, 0, 0, (int)Time.deltaTime);
+           // deltaTime1 = (int)(Time.deltaTime * 1000);
+           System.TimeSpan deltaTime = new System.TimeSpan(0,0,0,(int)sceneManager.telloManager.telloDeltaTime);
             var targetOffset = targetDrone.position - autoPilotTarget.position;
             //Debug.Log((int)Time.deltaTime);
 
