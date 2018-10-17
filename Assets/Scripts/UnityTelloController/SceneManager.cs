@@ -5,7 +5,7 @@ using TelloLib;
 
 namespace UnityControllerForTello
 {
-    public class SceneManager : SingletonMonoBehaviour<SceneManager>
+    public class SceneManager :SingletonMonoBehaviour<SceneManager>
     {
         public enum SceneType { FlyOnly, SimOnly, FlySim }
         public SceneType sceneType;
@@ -27,12 +27,12 @@ namespace UnityControllerForTello
         {
             base.Awake();
             telloManager = transform.Find("Tello Manager").GetComponent<TelloManager>();
-            if (!telloManager)
+            if(!telloManager)
                 Debug.LogError("No Tello Manager Found");
 
             display2Cam = transform.Find("Tracking Camera (Display 2)").GetComponent<Camera>();
             //TelloManager
-            if (sceneType != SceneType.SimOnly)
+            if(sceneType != SceneType.SimOnly)
             {
                 telloManager.CustomAwake();
                 display2Cam.transform.SetParent(telloManager.transform);
@@ -41,20 +41,20 @@ namespace UnityControllerForTello
                 telloManager.gameObject.SetActive(false);
 
             inputController = FindObjectOfType<InputController>();
-            if (!inputController)
+            if(!inputController)
                 Debug.LogError("Missing an input controller");
             else
                 inputController.CustomAwake(this);
 
             //Simulator
             simulator = FindObjectOfType<DroneSimulator>();
-            if (!simulator)
+            if(!simulator)
                 Debug.LogError("No tello simulator found");
-            if (sceneType == SceneType.FlyOnly)
+            if(sceneType == SceneType.FlyOnly)
             {
                 simulator.gameObject.SetActive(false);
             }
-            else if (sceneType == SceneType.SimOnly)
+            else if(sceneType == SceneType.SimOnly)
             {
                 display2Cam.transform.SetParent(simulator.transform);
             }
@@ -64,74 +64,88 @@ namespace UnityControllerForTello
         {
             inputController.CustomStart();
 
-            if (sceneType != SceneType.SimOnly)
+            if(sceneType != SceneType.SimOnly)
             {
                 telloManager.CustomStart();
             }
-            if (sceneType != SceneType.FlyOnly)
+            if(sceneType != SceneType.FlyOnly)
                 simulator.CustomStart(this);
 
-         //   inputController.ToggleAutoPilot(true);
+               inputController.ToggleAutoPilot(true);
         }
 
         private void Update()
         {
             connectionState = Tello.connectionState;
-            inputController.CheckInputs();
 
-            if (Input.GetKeyDown(KeyCode.Q))
+            if(sceneType == SceneType.SimOnly)
+            {
+                //put counter here
+                CheckFlightInputs();
+            }
+
+
+            if(Input.GetKeyDown(KeyCode.Q))
             {
                 inputController.ToggleAutoPilot(!inputController.autoPilotActive);
             }
-
-            if (Tello.connected & sceneType != SceneType.SimOnly)
+            if(Input.GetKeyDown(KeyCode.E))
             {
-                if (Input.GetKeyDown(KeyCode.T))
+                inputController.BeginFlightPath(FindObjectOfType<FlightPath>());
+            }
+
+            if(Tello.connected & sceneType != SceneType.SimOnly)
+            {
+                if(Input.GetKeyDown(KeyCode.T))
                 {
                     telloManager.OnTakeOff();
                 }
-                else if (Input.GetKeyDown(KeyCode.V))
+                else if(Input.GetKeyDown(KeyCode.V))
                 {
                     telloManager.StartProps();
                 }
-                else if (Input.GetKeyDown(KeyCode.L))
+                else if(Input.GetKeyDown(KeyCode.L))
                 {
                     Tello.land();
                 }
-                else if (Input.GetKeyDown(KeyCode.Joystick1Button0) || Input.GetKeyDown(KeyCode.Space))
+                else if(Input.GetKeyDown(KeyCode.Joystick1Button0) || Input.GetKeyDown(KeyCode.Space))
                     BeginTracking();
 
                 telloManager.CustomUpdate();
             }
-            if (sceneType != SceneType.FlyOnly)
+            if(sceneType != SceneType.FlyOnly)
             {
                 simulator.CustomUpdate();
             }
 
+        }
+        //if fly mode, called from Tello_onUpdate
+        //if sim mode, called from update every couple of seconds.
+        public void CheckFlightInputs()
+        {
+            inputController.CheckInputs();
         }
 
         void BeginTracking()
         {
             Debug.Log("Begin Tracking");
             telloManager.BeginTracking();
-            if (sceneType != SceneType.FlyOnly)
+            if(sceneType != SceneType.FlyOnly)
                 simulator.ResetSimulator();
         }
 
         private void FixedUpdate()
         {
-            if (sceneType != SceneType.FlyOnly)
+            if(sceneType != SceneType.FlyOnly)
                 simulator.CustomFixedUpdate();
         }
 
         void OnApplicationQuit()
         {
-            if (sceneType != SceneType.SimOnly)
+            if(sceneType != SceneType.SimOnly)
             {
                 telloManager.CustomOnApplicationQuit();
             }
         }
-
-
     }
 }
