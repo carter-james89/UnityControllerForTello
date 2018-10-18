@@ -68,27 +68,40 @@ namespace UnityControllerForTello
 
         void RunAutoPilot(float yaw)
         {
-          //  Debug.Log("Run autopilot with time " + prevDeltaTime);
+
+            //  Debug.Log("Run autopilot with time " + prevDeltaTime);
             // System.TimeSpan deltaTime = new System.TimeSpan(0,0,0,0,(int)(Time.deltaTime * 1000)); //0, 0, 0, (int)Time.deltaTime);
-            // deltaTime1 = (int)(Time.deltaTime * 1000);
-            System.TimeSpan deltaTime = new System.TimeSpan(0,0,0,0,(int)prevDeltaTime);
+
+            System.TimeSpan deltaTime = new System.TimeSpan(0,0,0,0,(int)(Time.deltaTime * 1000));
             var targetOffset = targetDrone.position - autoPilotTarget.position;
             //Debug.Log((int)Time.deltaTime);
 
             proximityPIDX.ProcessVariable = targetOffset.x;
             double trgtRoll = proximityPIDX.ControlVariable(deltaTime);
+            //if(double.IsNaN(trgtRoll))
+            //{
+            //    trgtRoll = 0;
+            //}
 
             proximityPIDY.ProcessVariable = targetOffset.y;
             double trgtElv = proximityPIDY.ControlVariable(deltaTime);
+            //if(double.IsNaN(trgtElv))
+            //{
+            //    trgtElv = 0;
+            //}
 
             proximityPIDZ.ProcessVariable = targetOffset.z;
             double trgtPitch = proximityPIDZ.ControlVariable(deltaTime);
+            //if(double.IsNaN(trgtPitch))
+            //{
+            //    trgtPitch = 0;
+            //}
 
             var yawError = targetDrone.eulerAngles.y - autoPilotTarget.eulerAngles.y;
             yawPID.ProcessVariable = yawError;
             double trgtYaw = yawPID.ControlVariable(deltaTime);
 
-            trgtYaw = yaw;
+            //trgtYaw = yaw;
 
             SetControllerState((float)trgtYaw,(float)trgtElv,(float)trgtRoll,(float)trgtPitch);
         }
@@ -143,8 +156,9 @@ namespace UnityControllerForTello
         {
             timeSinceLastUpdate = Time.time - prevDeltaTime;
             prevDeltaTime = Time.time;
+            deltaTime1 = (int)(timeSinceLastUpdate * 1000);
 
-          //  Debug.Log(timeSinceLastUpdate * 1000);
+            //  Debug.Log(timeSinceLastUpdate * 1000);
             // Debug.Log("check inputs");           
             float lx = 0f;
             float ly = 0f;
@@ -249,7 +263,7 @@ namespace UnityControllerForTello
                 {
                     if(i != currentFlightPath.flightPoints.Count - 1)
                         nextTarget = i + 1;
-                    
+
                     autoPilotTarget = currentFlightPath.flightPoints[nextTarget];
                     break;
                 }
