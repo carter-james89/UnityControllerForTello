@@ -29,7 +29,6 @@ namespace UnityControllerForTello
         Vector3 originPoint, originEuler;
         bool updateReceived = false;
 
-
         //Tello api
         public float posUncertainty;
         public bool batteryLow;
@@ -54,9 +53,8 @@ namespace UnityControllerForTello
         public int wifiStrength;
         public bool windState;
 
-
         bool startingProps = false;
-        int startUpCount = 0, startUpLimit = 100;
+        int startUpCount = 0, startUpLimit = 300;
 
         public delegate void EventDelegate();
 
@@ -102,11 +100,12 @@ namespace UnityControllerForTello
         }
         public void StartProps()
         {
-            Debug.Log("Start Prop");
+            //Debug.Log("Start Prop");
+            //Tello.StartMotors();
             //Tello.controllerState.setAxis(.9f, -.2f, -.9f, -.2f);
             //Tello.controllerState.setAxis(-.9f, -.2f, .9f, -.2f);
             //flying = true;
-            startingProps = true;
+            //startingProps = true;
         }
 
         //This is called when Tello.state.flying is set to true
@@ -123,8 +122,8 @@ namespace UnityControllerForTello
             if(startingProps)
             {
                 if(startUpCount < startUpLimit)
-                {
-                    Tello.controllerState.setAxis(0,1,0,0);
+                {              
+                    //Tello.controllerState.setAxis(0,1,0,0);
                     startUpCount++;
                 }
                 else
@@ -156,7 +155,7 @@ namespace UnityControllerForTello
         }
         public void TelloUpdate()
         {
-            Debug.Log("Tello Update");
+          //  Debug.Log("Tello Update");
             UpdateLocalState();
 
             if(flying & tracking)

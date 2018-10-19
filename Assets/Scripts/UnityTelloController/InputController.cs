@@ -19,6 +19,8 @@ namespace UnityControllerForTello
 
         Transform newObject, targetDrone;
 
+        public Vector3 offsetFromTarget;
+
         public bool headLess = false;
 
         public void CustomAwake(SceneManager sceneManager)
@@ -74,6 +76,7 @@ namespace UnityControllerForTello
 
             System.TimeSpan deltaTime = new System.TimeSpan(0,0,0,0,(int)(Time.deltaTime * 1000));
             var targetOffset = targetDrone.position - autoPilotTarget.position;
+            offsetFromTarget = targetOffset;
             //Debug.Log((int)Time.deltaTime);
 
             proximityPIDX.ProcessVariable = targetOffset.x;
@@ -101,7 +104,7 @@ namespace UnityControllerForTello
             yawPID.ProcessVariable = yawError;
             double trgtYaw = yawPID.ControlVariable(deltaTime);
 
-            //trgtYaw = yaw;
+            trgtYaw = yaw;
 
             SetControllerState((float)trgtYaw,(float)trgtElv,(float)trgtRoll,(float)trgtPitch);
         }
