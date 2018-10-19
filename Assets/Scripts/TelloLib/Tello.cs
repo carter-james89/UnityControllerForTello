@@ -54,6 +54,13 @@ namespace TelloLib
             setPacketCRCs(packet);
             client.Send(packet);
         }
+        public static void StartMotors()
+        {
+             var packet = new byte[] { 0x6c, 0x61, 0x0b, 0x5b, 0x28, 0x0d, 0x06, 0x13, 0x21, 0x45, 0x02, };
+            setPacketSequence(packet);
+            setPacketCRCs(packet);
+            client.Send(packet);
+        }
         public static void throwTakeOff()
         {
             var packet = new byte[] { 0xcc, 0x58, 0x00, 0x7c, 0x48, 0x5d, 0x00, 0xe4, 0x01, 0xc2, 0x16 };

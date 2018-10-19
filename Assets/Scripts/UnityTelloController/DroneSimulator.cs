@@ -63,12 +63,12 @@ namespace UnityControllerForTello
             if (receivingInput & rigidBody.drag != inputDrag)
             {
                 rigidBody.drag = inputDrag;
-                rigidBody.angularDrag = inputDrag * 3;
+                rigidBody.angularDrag = inputDrag * 9;
             }
             else if (!receivingInput & rigidBody.drag != drag)
             {
                 rigidBody.drag = drag;
-                rigidBody.angularDrag = drag * 3;
+                rigidBody.angularDrag = drag * 9;
             }
 
             //float yVel = rigidBody.velocity.y + Physics.gravity.y;

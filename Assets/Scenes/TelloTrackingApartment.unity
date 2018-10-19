@@ -309,8 +309,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 1453043355}
-  - {fileID: 54419206}
   - {fileID: 111827013}
+  - {fileID: 54419206}
   - {fileID: 39486196}
   - {fileID: 1159817103}
   - {fileID: 1384990570}
@@ -320,6 +320,7 @@ Transform:
   - {fileID: 1482992263}
   - {fileID: 344028816}
   - {fileID: 285846781}
+  - {fileID: 2132837541}
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -345,13 +346,13 @@ MonoBehaviour:
   headLess: 1
   PIDxP: 0.1
   PIDxI: 0
-  PIDxD: 0
+  PIDxD: 0.06
   PIDyP: 0.1
   PIDyI: 0
-  PIDyD: 0
+  PIDyD: 0.06
   PIDzP: 0.1
   PIDzI: 0
-  PIDzD: 0
+  PIDzD: 0.06
   autoPilotTarget: {fileID: 0}
   deltaTime1: 0
 --- !u!1 &39486190
@@ -573,7 +574,7 @@ Transform:
   - {fileID: 471030894}
   - {fileID: 1168645140}
   m_Father: {fileID: 13445132}
-  m_RootOrder: 2
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &111827014
 MonoBehaviour:
@@ -5548,13 +5549,13 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1883593024}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: 0.7856623, z: -0, w: 0.6186556}
   m_LocalPosition: {x: 4.797, y: 0.324, z: 2.68}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 13445132}
   m_RootOrder: 7
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 103.564, z: 0}
 --- !u!1 &1915582657
 GameObject:
   m_ObjectHideFlags: 0
@@ -6321,3 +6322,47 @@ MeshFilter:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 2100917966}
   m_Mesh: {fileID: 4300030, guid: a97db89b49283974dae961edbcc6ce37, type: 3}
+--- !u!1 &2132837540
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2132837541}
+  - component: {fileID: 2132837542}
+  m_Layer: 0
+  m_Name: Flight Path
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2132837541
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 2132837540}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 13445132}
+  m_RootOrder: 12
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2132837542
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 2132837540}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f352598af99605946b8d348c51aa6716, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  flightPoints:
+  - {fileID: 1384990570}
+  - {fileID: 1883593025}
+  - {fileID: 372153258}

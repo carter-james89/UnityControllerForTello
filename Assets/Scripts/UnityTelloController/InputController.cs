@@ -19,9 +19,9 @@ namespace UnityControllerForTello
 
         Transform newObject, targetDrone;
 
-        public bool headLess = false;
+        public Vector3 offsetFromTarget;
 
-        
+        public bool headLess = false;
 
         public void CustomAwake(SceneManager sceneManager)
         {
@@ -43,7 +43,7 @@ namespace UnityControllerForTello
         public float PIDzP = .1f, PIDzI = 0, PIDzD = .0f;
         public bool autoPilotActive { get; private set; } = false;
         public Transform autoPilotTarget;
-        PidController proximityPIDX, proximityPIDY, proximityPIDZ;
+        PidController proximityPIDX, proximityPIDY, proximityPIDZ, yawPID;
 
         public void ToggleAutoPilot(bool active)
         {
@@ -56,31 +56,57 @@ namespace UnityControllerForTello
                     proximityPIDX = new PidController(PIDxP,PIDxI,PIDxD,1,-1);
                     proximityPIDY = new PidController(PIDyP,PIDyI,PIDyD,1,-1);
                     proximityPIDZ = new PidController(PIDzP,PIDzI,PIDzD,1,-1);
+                    yawPID = new PidController(PIDzP,PIDzI,PIDzD,1,-1);
                     proximityPIDX.SetPoint = 0;
                     proximityPIDY.SetPoint = 0;
                     proximityPIDZ.SetPoint = 0;
+                    yawPID.SetPoint = 0;
                 }
             }
         }
         public int deltaTime1;
+        float timeSinceLastUpdate;
+        float prevDeltaTime = 0;
+
         void RunAutoPilot(float yaw)
         {
-           // System.TimeSpan deltaTime = new System.TimeSpan(0,0,0,0,(int)(Time.deltaTime * 1000)); //0, 0, 0, (int)Time.deltaTime);
-           // deltaTime1 = (int)(Time.deltaTime * 1000);
-           System.TimeSpan deltaTime = new System.TimeSpan(0,0,0,(int)sceneManager.telloManager.telloDeltaTime);
+
+            //  Debug.Log("Run autopilot with time " + prevDeltaTime);
+            // System.TimeSpan deltaTime = new System.TimeSpan(0,0,0,0,(int)(Time.deltaTime * 1000)); //0, 0, 0, (int)Time.deltaTime);
+
+            System.TimeSpan deltaTime = new System.TimeSpan(0,0,0,0,(int)(Time.deltaTime * 1000));
             var targetOffset = targetDrone.position - autoPilotTarget.position;
+            offsetFromTarget = targetOffset;
             //Debug.Log((int)Time.deltaTime);
 
             proximityPIDX.ProcessVariable = targetOffset.x;
             double trgtRoll = proximityPIDX.ControlVariable(deltaTime);
+            //if(double.IsNaN(trgtRoll))
+            //{
+            //    trgtRoll = 0;
+            //}
 
             proximityPIDY.ProcessVariable = targetOffset.y;
             double trgtElv = proximityPIDY.ControlVariable(deltaTime);
+            //if(double.IsNaN(trgtElv))
+            //{
+            //    trgtElv = 0;
+            //}
 
             proximityPIDZ.ProcessVariable = targetOffset.z;
             double trgtPitch = proximityPIDZ.ControlVariable(deltaTime);
+            //if(double.IsNaN(trgtPitch))
+            //{
+            //    trgtPitch = 0;
+            //}
 
-            SetControllerState(yaw,(float)trgtElv,(float)trgtRoll,(float)trgtPitch);
+            var yawError = targetDrone.eulerAngles.y - autoPilotTarget.eulerAngles.y;
+            yawPID.ProcessVariable = yawError;
+            double trgtYaw = yawPID.ControlVariable(deltaTime);
+
+            trgtYaw = yaw;
+
+            SetControllerState((float)trgtYaw,(float)trgtElv,(float)trgtRoll,(float)trgtPitch);
         }
 
         void SetControllerState(float yaw,float elv,float roll,float pitch)
@@ -106,19 +132,19 @@ namespace UnityControllerForTello
                 var headLessDirz = Vector3.Project(headLessDir,targetDrone.forward.normalized);
                 pitch = headLessDirz.magnitude;
 
-                var crossProduct = Vector3.Dot(headLessDirz, targetDrone.forward.normalized);
+                var crossProduct = Vector3.Dot(headLessDirz,targetDrone.forward.normalized);
 
-                if (crossProduct < 0)
+                if(crossProduct < 0)
                 {
-                   // roll = -roll;
+                    // roll = -roll;
                     pitch = -pitch;
                 }
-                crossProduct = Vector3.Dot(headLessDirX, targetDrone.right.normalized);
+                crossProduct = Vector3.Dot(headLessDirX,targetDrone.right.normalized);
 
-                if (crossProduct < 0)
+                if(crossProduct < 0)
                 {
                     roll = -roll;
-                   // pitch = -pitch;
+                    // pitch = -pitch;
                 }
             }
 
@@ -131,6 +157,11 @@ namespace UnityControllerForTello
         }
         public void CheckInputs()
         {
+            timeSinceLastUpdate = Time.time - prevDeltaTime;
+            prevDeltaTime = Time.time;
+            deltaTime1 = (int)(timeSinceLastUpdate * 1000);
+
+            //  Debug.Log(timeSinceLastUpdate * 1000);
             // Debug.Log("check inputs");           
             float lx = 0f;
             float ly = 0f;
@@ -195,6 +226,18 @@ namespace UnityControllerForTello
                 else
                 {
                     RunAutoPilot(lx);
+
+                    var distFromTarget = Vector3.Distance(targetDrone.position,autoPilotTarget.position);
+                    atTarget = false;
+                    //Debug.Log(distFromTarget +" from target");
+                    if(distFromTarget < .3f)
+                    {
+                        atTarget = true;
+                        if(currentFlightPath)
+                        {
+                            ReachedPathPoint();
+                        }
+                    }
                 }
             }
             else
@@ -204,6 +247,30 @@ namespace UnityControllerForTello
 
             //if (inputType == InputType.ThrustmasterThrottle)
             //    CheckForFlip(flipDir, flipDirX);           
+        }
+        public bool atTarget { get; private set; }
+        FlightPath currentFlightPath;
+        public void BeginFlightPath(FlightPath pathToFly)
+        {
+            Debug.Log("Begin Flight Path");
+            currentFlightPath = pathToFly;
+            autoPilotTarget = currentFlightPath.flightPoints[0];
+        }
+        void ReachedPathPoint()
+        {
+            Debug.Log("Find next flight point");
+            int nextTarget = 0;
+            for(int i = 0;i < currentFlightPath.flightPoints.Count;i++)
+            {
+                if(autoPilotTarget == currentFlightPath.flightPoints[i])
+                {
+                    if(i != currentFlightPath.flightPoints.Count - 1)
+                        nextTarget = i + 1;
+
+                    autoPilotTarget = currentFlightPath.flightPoints[nextTarget];
+                    break;
+                }
+            }
         }
     }
 }
