@@ -19,6 +19,7 @@ namespace UnityControllerForTello
 
         Transform newObject, targetDrone;
 
+        public float yawError;
         public Vector3 offsetFromTarget;
 
         public bool headLess = false;
@@ -41,6 +42,7 @@ namespace UnityControllerForTello
         public float PIDxP = .1f, PIDxI = 0, PIDxD = .0f;
         public float PIDyP = .1f, PIDyI = 0, PIDyD = .0f;
         public float PIDzP = .1f, PIDzI = 0, PIDzD = .0f;
+        public float yawP, yawI, yawD;
         public bool autoPilotActive { get; private set; } = false;
         public Transform autoPilotTarget;
         PidController proximityPIDX, proximityPIDY, proximityPIDZ, yawPID;
@@ -56,7 +58,7 @@ namespace UnityControllerForTello
                     proximityPIDX = new PidController(PIDxP,PIDxI,PIDxD,1,-1);
                     proximityPIDY = new PidController(PIDyP,PIDyI,PIDyD,1,-1);
                     proximityPIDZ = new PidController(PIDzP,PIDzI,PIDzD,1,-1);
-                    yawPID = new PidController(PIDzP,PIDzI,PIDzD,1,-1);
+                    yawPID = new PidController(yawP,yawI,yawD,1,-1);
                     proximityPIDX.SetPoint = 0;
                     proximityPIDY.SetPoint = 0;
                     proximityPIDZ.SetPoint = 0;
@@ -100,11 +102,19 @@ namespace UnityControllerForTello
             //    trgtPitch = 0;
             //}
 
-            var yawError = targetDrone.eulerAngles.y - autoPilotTarget.eulerAngles.y;
+              yawError = targetDrone.eulerAngles.y - autoPilotTarget.eulerAngles.y;
+
+            if (yawError < -180)
+                yawError = 360 - System.Math.Abs(yawError);
+            else if (yawError > 180)
+                yawError = -(360 - yawError);
+
+            //yawError = Quaternion.eulerAngles(yawErrorRot).y;
+            // yawError = Vector3.Angle(targetDrone.forward, autoPilotTarget.forward);
             yawPID.ProcessVariable = yawError;
             double trgtYaw = yawPID.ControlVariable(deltaTime);
 
-            trgtYaw = yaw;
+          //  trgtYaw = yaw;
 
             SetControllerState((float)trgtYaw,(float)trgtElv,(float)trgtRoll,(float)trgtPitch);
         }
@@ -230,7 +240,7 @@ namespace UnityControllerForTello
                     var distFromTarget = Vector3.Distance(targetDrone.position,autoPilotTarget.position);
                     atTarget = false;
                     //Debug.Log(distFromTarget +" from target");
-                    if(distFromTarget < .3f)
+                    if(distFromTarget < .2f)
                     {
                         atTarget = true;
                         if(currentFlightPath)

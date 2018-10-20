@@ -139,7 +139,7 @@ public class DebugVector : MonoBehaviour
             zRenderer.SetWidth(width, width);
         }
 
-        anchorObject.hideFlags = HideFlags.HideInHierarchy;
+      //  anchorObject.hideFlags = HideFlags.HideInHierarchy;
     }
     LineRenderer yRenderer;
     public void Update()

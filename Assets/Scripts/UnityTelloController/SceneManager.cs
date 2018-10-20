@@ -71,7 +71,7 @@ namespace UnityControllerForTello
             if(sceneType != SceneType.FlyOnly)
                 simulator.CustomStart(this);
 
-             //  inputController.ToggleAutoPilot(true);
+            inputController.ToggleAutoPilot(true);
         }
 
         private void Update()
@@ -85,16 +85,16 @@ namespace UnityControllerForTello
             }
 
 
-            //if(Input.GetKeyDown(KeyCode.Q))
-            //{
-            //    inputController.ToggleAutoPilot(!inputController.autoPilotActive);
-            //}
-            //if(Input.GetKeyDown(KeyCode.E))
-            //{
-            //    inputController.BeginFlightPath(FindObjectOfType<FlightPath>());
-            //}
+            if (Input.GetKeyDown(KeyCode.Q))
+            {
+                inputController.ToggleAutoPilot(!inputController.autoPilotActive);
+            }
+            if (Input.GetKeyDown(KeyCode.E))
+            {
+                inputController.BeginFlightPath(FindObjectOfType<FlightPath>());
+            }
 
-            if(Tello.connected & sceneType != SceneType.SimOnly)
+            if (Tello.connected & sceneType != SceneType.SimOnly)
             {
                 if(Input.GetKeyDown(KeyCode.T))
                 {

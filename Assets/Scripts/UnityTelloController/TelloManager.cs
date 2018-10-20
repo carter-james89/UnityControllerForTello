@@ -194,7 +194,7 @@ namespace UnityControllerForTello
             {
                 transform.position = currentPos;
                 CreateFlightPoint();
-                telloGround.position = transform.position - new Vector3(0,height,0);
+                telloGround.position = transform.position - new Vector3(0,height*.1f,0);
             }
             yaw = yaw * (180 / Mathf.PI);
             transform.eulerAngles = new Vector3(0,yaw,0);
