@@ -25,7 +25,8 @@ namespace UnityControllerForTello
         float trackingOffsetX, trackingOffsetY, trackingOffsetZ;
         float prevPosX, prevPosY, prevPosZ;
         Transform ground, telloGround, telloModel;
-        bool tracking = false, firstTrackinFrame = true;
+        public bool tracking { get; private set; } = false;
+            bool firstTrackinFrame = true;
         Vector3 originPoint, originEuler;
         bool updateReceived = false;
 

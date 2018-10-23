@@ -11,16 +11,16 @@ public class FlightPath : MonoBehaviour {
         {
             DebugVector.DrawVector(flightPoints[i].transform,Color.red,Color.green,Color.blue,Vector3.one);
 
-            if (i != 0)
-            {
-                flightPoints[i].LookAt(flightPoints[i -1], Vector3.up);
+            //if (i != 0)
+            //{
+            //    flightPoints[i].LookAt(flightPoints[i -1], Vector3.up);
                 
-            }
-            else
-            {
-                flightPoints[i].LookAt(flightPoints[flightPoints.Count - 1], Vector3.up);
-            }
-            flightPoints[i].localEulerAngles += new Vector3(0, 180, 0);
+            //}
+            //else
+            //{
+            //    flightPoints[i].LookAt(flightPoints[flightPoints.Count - 1], Vector3.up);
+            //}
+            //flightPoints[i].localEulerAngles += new Vector3(0, 180, 0);
         }
     }
 }

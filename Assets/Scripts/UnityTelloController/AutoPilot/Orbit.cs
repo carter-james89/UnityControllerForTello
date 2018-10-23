@@ -4,10 +4,12 @@ using UnityEngine;
 
 public class Orbit : MonoBehaviour {
     bool orbit = false;
+    Transform target;
 	// Use this for initialization
 	void Start () {
-		
-	}
+        target = transform.Find("Target");
+        DebugVector.DrawVector(target, Color.red, Color.green, Color.blue, Vector3.one);
+    }
 	
 	// Update is called once per frame
 	void Update () {
