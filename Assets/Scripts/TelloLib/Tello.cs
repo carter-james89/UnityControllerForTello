@@ -751,7 +751,7 @@ namespace TelloLib
                             if ((tick % iFrameRate) == 0)
                                 requestIframe();
                         }
-                        Thread.Sleep(50);//Often enough?
+                        Thread.Sleep(20);//Often enough?
                     }
                     catch (Exception ex)
                     {

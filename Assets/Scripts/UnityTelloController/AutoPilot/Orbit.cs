@@ -14,7 +14,12 @@ public class Orbit : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
         if (Input.GetKeyDown(KeyCode.R))
+        {
             orbit = true;
+            transform.position = FindObjectOfType<UnityControllerForTello.TelloManager>().transform.position;
+            FindObjectOfType<UnityControllerForTello.InputController>().autoPilotTarget = target;
+        }
+            
 
         if (orbit)
         {
