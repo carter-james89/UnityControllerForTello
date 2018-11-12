@@ -67,6 +67,7 @@ namespace UnityControllerForTello
             }
             else
             {
+                Debug.Log("AutoPilot Disabled");
                 autoPilotActive = false;
             }
         }
@@ -90,7 +91,6 @@ namespace UnityControllerForTello
         bool highPIDMode = true;
         void RunAutoPilot(float yaw)
         {
-
             //  Debug.Log("Run autopilot with time " + prevDeltaTime);
             // System.TimeSpan deltaTime = new System.TimeSpan(0,0,0,0,(int)(Time.deltaTime * 1000)); //0, 0, 0, (int)Time.deltaTime);
 

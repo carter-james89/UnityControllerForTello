@@ -106,6 +106,7 @@ namespace UnityControllerForTello
                 }
                 else if(Input.GetKeyDown(KeyCode.L))
                 {
+                    telloManager.StopTracking();
                     Tello.land();
                 }
                 else if(Input.GetKeyDown(KeyCode.Joystick1Button0) || Input.GetKeyDown(KeyCode.Space))
