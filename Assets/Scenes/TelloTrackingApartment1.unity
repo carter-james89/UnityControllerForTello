@@ -466,6 +466,10 @@ MonoBehaviour:
   wifiStrength: 0
   windState: 0
   sceneManager: {fileID: 0}
+  telloFrameCount: 0
+  telloDeltaTime: 0
+  sumDeltaTime: 0
+  avgTelloUpdateDeltaTime: 0
 --- !u!1001 &112926913
 Prefab:
   m_ObjectHideFlags: 0
@@ -1789,6 +1793,34 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!1 &1001276664
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1001276665}
+  m_Layer: 0
+  m_Name: FlightPoints
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1001276665
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1001276664}
+  m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.76686, y: 0.76686186, z: 0.76686186}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 5
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1112056087
 GameObject:
   m_ObjectHideFlags: 0
