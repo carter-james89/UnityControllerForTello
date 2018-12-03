@@ -24,7 +24,7 @@ namespace UnityControllerForTello
         List<FlightPoint> flightPoints;
         float trackingOffsetX, trackingOffsetY, trackingOffsetZ;
         float prevPosX, prevPosY, prevPosZ;
-        Transform ground, telloGround, telloModel;
+        Transform ground, telloGround, telloModel, flightPointsParent;
         public bool tracking { get; private set; } = false;
         bool firstTrackinFrame = true;
         Vector3 originPoint, originEuler;
@@ -72,6 +72,7 @@ namespace UnityControllerForTello
                 telloModel = transform.Find("Tello Model");
                 ground = transform.Find("Ground");
                 telloGround = transform.Find("Tello Ground");
+                flightPointsParent = GameObject.Find("FlightPoints").transform;
                 //telloHeight = GameObject.Find("tello (Height)").transform;
             }
             catch
@@ -219,6 +220,7 @@ namespace UnityControllerForTello
         bool validTrackingFrame;
         bool survivedOffset = false;
         Vector3 prevDeltaPos;
+        float firstValidFrame = Mathf.Infinity;
         void Tracktello()
         {
             validTrackingFrame = true;
@@ -256,12 +258,20 @@ namespace UnityControllerForTello
                 if (!survivedOffset)
                 {
                     survivedOffset = true;
+                    firstValidFrame = telloFrameCount + 1;
+
+                }
+                else if (telloFrameCount == firstValidFrame)
+                {
                     Debug.Log("Y Offset " + currentPos + " tello frame count " + telloFrameCount);
                     originPoint = new Vector3(posX, posY, posZ);
 
-                    telloGround.position = transform.position - new Vector3(0, height * .01f, 0);
+                    Debug.Log("tello height set to " + height * .1f);
+                    telloGround.position = transform.position - new Vector3(0, height * .1f, 0);
+                    originPoint += new Vector3(0, height * .1f, 0);
                     telloGround.SetParent(null);
                     transform.SetParent(telloGround);
+                    GameObject.Find("FlightPoints").transform.SetParent(telloGround);
                     telloGround.position = new Vector3(telloGround.position.x, 0, telloGround.position.z);
                 }
                 else
@@ -289,6 +299,7 @@ namespace UnityControllerForTello
         {
             var newPoint = Instantiate(GameObject.Find("FlightPoint")).GetComponent<FlightPoint>();
             newPoint.transform.position = transform.position;
+            newPoint.transform.SetParent(flightPointsParent);
             newPoint.CustomStart();
 
             if (flightPoints.Count > 0 & drawFlightPath)
