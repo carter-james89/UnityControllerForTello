@@ -127,8 +127,19 @@ namespace UnityControllerForTello
         void OnFlyBegin()
         {
             Debug.Log("flight begin");
+            BeginTracking();
             flying = true;
             Debug.Log("takeoff pos " + posX + " " + posY + " " + posZ);
+        }
+        public void OnLand()
+        {
+            Debug.Log("Land");
+            Tello.land();
+            StopTracking();
+            flying = false;
+            transform.position = new Vector3(transform.position.x, 0, transform.position.z);
+            CreateFlightPoint();
+            
         }
 
         //called from scene manager
@@ -147,16 +158,15 @@ namespace UnityControllerForTello
             //        startingProps = false;
             //    }
             //}
-            if (updateReceived
-                )
+            if (updateReceived)
             {
                 TelloUpdate();
                 sceneManager.CheckFlightInputs();
             }
 
 
-            if (Tello.state.flying & !flying)
-                OnFlyBegin();
+            //if (Tello.state.flying & !flying)
+            //    OnFlyBegin();
 
             if (flying)
             {
@@ -187,8 +197,8 @@ namespace UnityControllerForTello
             {             
                 if(localOnGround != onGround)
                 {
-                    Debug.Log("Left Ground");
-                    PlaceGameObject("Left Ground + " + telloFrameCount + " frame count " + Time.frameCount);
+                   // Debug.Log("Left Ground");
+                    //PlaceGameObject("Left Ground + " + telloFrameCount + " frame count " + Time.frameCount);
                     localOnGround = onGround;
                 }
                 Tracktello();
@@ -208,19 +218,15 @@ namespace UnityControllerForTello
             //trackingOffsetY = posY;
             //trackingOffsetZ = posZ;
             tracking = true;
-
             originPoint = new Vector3(posX, posY, posZ);
-            originEuler = new Vector3(pitch, yaw, roll);
-            onTrackStartRot = new Quaternion(quatW, quatX, quatY, quatZ);
-            ground.position -= new Vector3(0, height, 0);
-            flightPoints = new List<FlightPoint>();
-            CreateFlightPoint();
+
         }
 
         bool validTrackingFrame;
         bool survivedOffset = false;
         Vector3 prevDeltaPos;
         float firstValidFrame = Mathf.Infinity;
+        float elevationOffset;
         void Tracktello()
         {
             validTrackingFrame = true;
@@ -235,58 +241,64 @@ namespace UnityControllerForTello
             var yDif = dif.y;
             var zDif = dif.z;
 
-            //valid tello frame
-            if (Mathf.Abs(xDif) < 2 & Mathf.Abs(yDif) < 2 & Mathf.Abs(zDif) < 2)
+           // Debug.Log(System.Math.Round(dif.y, 2));
+            //Debug.Log(dif.y + " " + telloFrameCount);
+            // bool inRange = false;
+            if (Mathf.Abs((float)System.Math.Round(dif.x, 2)) > 1 & !survivedOffset)
             {
-                transform.position = currentPos;
-                prevDeltaPos = dif;
+                // originPoint = new Vector3(posX, posY, posZ);
+                originPoint = currentPos;// new Vector3(posX, posY, posZ);
+                Debug.Log("Y Offset " + originPoint + " tello frame count " + telloFrameCount);
+                originEuler = new Vector3(pitch, yaw, roll);
+                onTrackStartRot = new Quaternion(quatW, quatX, quatY, quatZ);
+                ground.position -= new Vector3(0, height * .1f, 0);
+                flightPoints = new List<FlightPoint>();
+                CreateFlightPoint();
 
-                Vector3 flightPointDif = flightPoints[flightPoints.Count - 1].transform.position - currentPos;
-                if (flightPointDif.magnitude > .001f)
-                {
-                    CreateFlightPoint();
-                   
-                }
+                Debug.Log("tello height set to " + height * .1f);
+                telloGround.position = transform.position - new Vector3(0, height * .1f, 0);
+                // originPoint += new Vector3(0, height * .1f, 0);
+                elevationOffset = height * .1f;
+                //telloGround.SetParent(null);
+                // transform.SetParent(telloGround);
+                //GameObject.Find("FlightPoints").transform.SetParent(telloGround);
+                // telloGround.position = new Vector3(telloGround.position.x, 0, telloGround.position.z);
+                survivedOffset = true;
             }
-            else
+            else if (survivedOffset)
             {
-                Debug.Log("Tracking lost " + telloFrameCount);
-                PlaceGameObject("Pre Offset " + telloFrameCount);
-                transform.position += prevDeltaPos;
-                PlaceGameObject("Post Offset " + telloFrameCount);
-
-                if (!survivedOffset)
+                //valid tello frame
+                if (Mathf.Abs(xDif) < 2 & Mathf.Abs(yDif) < 2 & Mathf.Abs(zDif) < 2)
                 {
-                    survivedOffset = true;
-                    firstValidFrame = telloFrameCount + 1;
+                    transform.position = currentPos;
+                    transform.position += new Vector3(0, elevationOffset, 0);
+                    prevDeltaPos = dif;
 
-                }
-                else if (telloFrameCount == firstValidFrame)
-                {
-                    Debug.Log("Y Offset " + currentPos + " tello frame count " + telloFrameCount);
-                    originPoint = new Vector3(posX, posY, posZ);
+                    Vector3 flightPointDif = flightPoints[flightPoints.Count - 1].transform.position - currentPos;
+                    if (flightPointDif.magnitude > .001f)
+                    {
+                        CreateFlightPoint();
 
-                    Debug.Log("tello height set to " + height * .1f);
-                    telloGround.position = transform.position - new Vector3(0, height * .1f, 0);
-                    originPoint += new Vector3(0, height * .1f, 0);
-                    telloGround.SetParent(null);
-                    transform.SetParent(telloGround);
-                    GameObject.Find("FlightPoints").transform.SetParent(telloGround);
-                    telloGround.position = new Vector3(telloGround.position.x, 0, telloGround.position.z);
+                    }
                 }
                 else
                 {
+                    Debug.Log("Tracking lost " + telloFrameCount);
+                    // PlaceGameObject("Pre Offset " + telloFrameCount);
+                    // transform.position += prevDeltaPos;
+                    // PlaceGameObject("Post Offset " + telloFrameCount);
+
                     if (inputController.autoPilotActive)
                         inputController.ToggleAutoPilot(false);
                 }
+
+
+                yaw = yaw * (180 / Mathf.PI);
+                transform.eulerAngles = new Vector3(0, yaw, 0);
+                pitch = pitch * (180 / Mathf.PI);
+                roll = roll * (180 / Mathf.PI);
+                telloModel.localEulerAngles = new Vector3(pitch - 90, 0, roll);
             }
-
-
-            yaw = yaw * (180 / Mathf.PI);
-            transform.eulerAngles = new Vector3(0, yaw, 0);
-            pitch = pitch * (180 / Mathf.PI);
-            roll = roll * (180 / Mathf.PI);
-            telloModel.localEulerAngles = new Vector3(pitch - 90, 0, roll);
         }
 
         void PlaceGameObject(string name)
@@ -372,6 +384,7 @@ namespace UnityControllerForTello
             wifiStrength = state.wifiStrength;
             windState = state.windState;
         }
+
 
         public void CustomOnApplicationQuit()
         {
