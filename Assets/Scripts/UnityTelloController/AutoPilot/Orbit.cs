@@ -17,7 +17,7 @@ public class Orbit : MonoBehaviour {
         {
             orbit = true;
             transform.position = FindObjectOfType<UnityControllerForTello.TelloManager>().transform.position;
-            FindObjectOfType<UnityControllerForTello.InputController>().autoPilotTarget = target;
+           // FindObjectOfType<UnityControllerForTello.InputController>().autoPilotTarget = target;
         }
             
 

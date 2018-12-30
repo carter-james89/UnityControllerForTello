@@ -28,23 +28,23 @@ namespace UnityControllerForTello
                 ResetSimulator();
             }
         }
-        public void CustomFixedUpdate()
+        public void FixedUpdate()
         {
             rigidBody.AddForce(transform.up * 9.81f);
             bool receivingInput = false;
-            var pitchInput = inputController.inputPitch;
+            var pitchInput = sceneManager.pitch;
             rigidBody.AddForce(transform.forward * pitchInput);
             if (System.Math.Abs(pitchInput) > 0)
             {
                 receivingInput = true;
             }
-            var elvInput = inputController.inputElv;
+            var elvInput = sceneManager.elv;
             rigidBody.AddForce(transform.up * elvInput);
             if (System.Math.Abs(elvInput) > 0)
             {
                 receivingInput = true;
             }
-            var rollInput = inputController.inputRoll;
+            var rollInput = sceneManager.roll;
             rigidBody.AddForce(transform.right * rollInput);
             if (System.Math.Abs(rollInput) > 0)
             {
@@ -52,7 +52,7 @@ namespace UnityControllerForTello
                 receivingInput = true;
             }
 
-            var yawInput = inputController.inputYaw;
+            var yawInput = sceneManager.yaw;
             rigidBody.AddTorque(transform.up * yawInput);
             if (System.Math.Abs(yawInput) > 0)
             {

@@ -7,6 +7,8 @@ namespace UnityControllerForTello
 {
     public class TelloManager : MonoBehaviour
     {
+        public enum FlightType { Tracking, AutoPilot }
+        public FlightType flightType = FlightType.Tracking;
         public bool drawFlightPath = true;
         private TelloVideoTexture telloVideoTexture;
         public float yaw, pitch, roll;
@@ -101,7 +103,8 @@ namespace UnityControllerForTello
                 preFlightPanel.SetActive(false);
             Tello.takeOff();
         }
-        public void StartProps()
+        public void Prime\
+            Props()
         {
             Debug.Log("Start Prop");
             Tello.SuspendControllerUpdate();
@@ -117,10 +120,6 @@ namespace UnityControllerForTello
             if (preFlightPanel)
                 preFlightPanel.SetActive(false);
             UnityEngine.Debug.Log("props started");
-            //Tello.controllerState.setAxis(.9f, -.2f, -.9f, -.2f);
-            //Tello.controllerState.setAxis(-.9f, -.2f, .9f, -.2f);
-            //flying = true;
-            // startingProps = true;
         }
 
         //This is called when Tello.state.flying is set to true
@@ -139,49 +138,33 @@ namespace UnityControllerForTello
             flying = false;
             transform.position = new Vector3(transform.position.x, 0, transform.position.z);
             CreateFlightPoint();
-            
         }
 
         //called from scene manager
         public void CustomUpdate()
         {
-            //if(startingProps)
-            //{
-            //    if(startUpCount < startUpLimit)
-            //    {              
-            //        Tello.controllerState.setAxis(-1,0,0,0);
-            //        startUpCount++;
-            //    }
-            //    else
-            //    {
-            //        Debug.Log("Props started");
-            //        startingProps = false;
-            //    }
-            //}
             if (updateReceived)
             {
+                sceneManager.RunFrame();
+                SendTelloInputs();
                 TelloUpdate();
-                sceneManager.CheckFlightInputs();
+               // sceneManager.CheckFlightInputs();
             }
+        }
 
-
-            //if (Tello.state.flying & !flying)
-            //    OnFlyBegin();
-
+        public void SendTelloInputs()
+        {
             if (flying)
             {
-                Tello.controllerState.setAxis(inputController.inputYaw, inputController.inputElv, inputController.inputRoll, inputController.inputPitch);
+                Tello.controllerState.setAxis(sceneManager.yaw,sceneManager.elv,sceneManager.roll,sceneManager.pitch);
             }
-            ////this is currently broken
-            //if (Input.GetKeyDown(KeyCode.P))
-            //{
-            //    Debug.Log("set Pic mode");
-            //    Tello.setPicVidMode(0);
-            //}
         }
         float prevTelloFrameTime = 0;
         public float telloDeltaTime, sumDeltaTime, avgTelloUpdateDeltaTime;
         bool localOnGround = true;
+        /// <summary>
+        /// Updates received from the Tello
+        /// </summary>
         public void TelloUpdate()
         {
             telloFrameCount++;
@@ -190,20 +173,17 @@ namespace UnityControllerForTello
             prevTelloFrameTime = Time.time;
             avgTelloUpdateDeltaTime = sumDeltaTime / telloFrameCount;
 
-            //  Debug.Log("Tello Update");
             UpdateLocalState();
 
             if (flying & tracking)
-            {             
-                if(localOnGround != onGround)
+            {
+                if (localOnGround != onGround)
                 {
-                   // Debug.Log("Left Ground");
-                    //PlaceGameObject("Left Ground + " + telloFrameCount + " frame count " + Time.frameCount);
                     localOnGround = onGround;
                 }
                 Tracktello();
             }
-                
+
             updateReceived = false;
         }
         public void StopTracking()
@@ -214,18 +194,13 @@ namespace UnityControllerForTello
         public void BeginTracking()
         {
             Debug.Log("TrackingOffset : " + posX + " " + posY + " " + posZ);
-            //trackingOffsetX = posX;
-            //trackingOffsetY = posY;
-            //trackingOffsetZ = posZ;
             tracking = true;
             originPoint = new Vector3(posX, posY, posZ);
-
         }
 
-        bool validTrackingFrame;
-        bool survivedOffset = false;
+        bool validTrackingFrame, survivedTakeoffOffset = false;
         Vector3 prevDeltaPos;
-        float firstValidFrame = Mathf.Infinity;
+
         float elevationOffset;
         void Tracktello()
         {
@@ -241,13 +216,10 @@ namespace UnityControllerForTello
             var yDif = dif.y;
             var zDif = dif.z;
 
-           // Debug.Log(System.Math.Round(dif.y, 2));
-            //Debug.Log(dif.y + " " + telloFrameCount);
-            // bool inRange = false;
-            if (Mathf.Abs((float)System.Math.Round(dif.x, 2)) > 1 & !survivedOffset)
+            Debug.Log(flymode + " telloframe " + telloFrameCount);
+            if (flymode == 6 & !survivedTakeoffOffset)
             {
-                // originPoint = new Vector3(posX, posY, posZ);
-                originPoint = currentPos;// new Vector3(posX, posY, posZ);
+                originPoint = currentPos;
                 Debug.Log("Y Offset " + originPoint + " tello frame count " + telloFrameCount);
                 originEuler = new Vector3(pitch, yaw, roll);
                 onTrackStartRot = new Quaternion(quatW, quatX, quatY, quatZ);
@@ -257,15 +229,14 @@ namespace UnityControllerForTello
 
                 Debug.Log("tello height set to " + height * .1f);
                 telloGround.position = transform.position - new Vector3(0, height * .1f, 0);
-                // originPoint += new Vector3(0, height * .1f, 0);
                 elevationOffset = height * .1f;
-                //telloGround.SetParent(null);
-                // transform.SetParent(telloGround);
-                //GameObject.Find("FlightPoints").transform.SetParent(telloGround);
-                // telloGround.position = new Vector3(telloGround.position.x, 0, telloGround.position.z);
-                survivedOffset = true;
+                survivedTakeoffOffset = true;
+                //if (flightType == FlightType.AutoPilot)
+                //{
+                //    ActivateAutoPilot();
+                //}
             }
-            else if (survivedOffset)
+            else if (survivedTakeoffOffset)
             {
                 //valid tello frame
                 if (Mathf.Abs(xDif) < 2 & Mathf.Abs(yDif) < 2 & Mathf.Abs(zDif) < 2)
@@ -273,12 +244,10 @@ namespace UnityControllerForTello
                     transform.position = currentPos;
                     transform.position += new Vector3(0, elevationOffset, 0);
                     prevDeltaPos = dif;
-
                     Vector3 flightPointDif = flightPoints[flightPoints.Count - 1].transform.position - currentPos;
                     if (flightPointDif.magnitude > .001f)
                     {
                         CreateFlightPoint();
-
                     }
                 }
                 else
@@ -288,10 +257,7 @@ namespace UnityControllerForTello
                     // transform.position += prevDeltaPos;
                     // PlaceGameObject("Post Offset " + telloFrameCount);
 
-                    if (inputController.autoPilotActive)
-                        inputController.ToggleAutoPilot(false);
                 }
-
 
                 yaw = yaw * (180 / Mathf.PI);
                 transform.eulerAngles = new Vector3(0, yaw, 0);
@@ -301,12 +267,19 @@ namespace UnityControllerForTello
             }
         }
 
-        void PlaceGameObject(string name)
-        {
-            var newTrans = new GameObject().transform;
-            newTrans.position = transform.position;
-            newTrans.name = name;
-        }
+        //void PlaceGameObject(string name)
+        //{
+        //    var newTrans = new GameObject().transform;
+        //    newTrans.position = transform.position;
+        //    newTrans.name = name;
+        //}
+
+
+         
+
+        /// <summary>
+        /// Create a point for tracking
+        /// </summary>
         void CreateFlightPoint()
         {
             var newPoint = Instantiate(GameObject.Find("FlightPoint")).GetComponent<FlightPoint>();
