@@ -103,8 +103,7 @@ namespace UnityControllerForTello
                 preFlightPanel.SetActive(false);
             Tello.takeOff();
         }
-        public void Prime\
-            Props()
+        public void PrimeProps()
         {
             Debug.Log("Start Prop");
             Tello.SuspendControllerUpdate();

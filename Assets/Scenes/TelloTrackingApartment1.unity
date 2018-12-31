@@ -2646,14 +2646,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   PIDxP: 0.1
-  PIDxI: 0.2
-  PIDxD: 0.9
+  PIDxI: 0
+  PIDxD: 0
   PIDyP: 0.1
-  PIDyI: 0.2
-  PIDyD: 0.9
+  PIDyI: 0
+  PIDyD: 0
   PIDzP: 0.1
-  PIDzI: 0.2
-  PIDzD: 0.9
+  PIDzI: 0
+  PIDzD: 0
   yawP: 0.01
   yawI: 0
   yawD: 0

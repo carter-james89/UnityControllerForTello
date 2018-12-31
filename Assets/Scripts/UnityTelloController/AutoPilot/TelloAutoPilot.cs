@@ -87,7 +87,7 @@ namespace UnityControllerForTello
             //    trgtPitch = 0;
             //}
 
-            var yawError = targetDrone.eulerAngles.y - targetDrone.eulerAngles.y;
+            var yawError = sceneManager.activeDrone.eulerAngles.y - targetDrone.eulerAngles.y;
 
             if (yawError < -180)
                 yawError = 360 - System.Math.Abs(yawError);
