@@ -71,16 +71,14 @@ namespace UnityControllerForTello
         private void Start()
         {
             inputController.CustomStart();
-
             if (sceneType != SceneType.SimOnly)
             {
-                telloManager.CustomStart();
+                //  telloManager.CustomStart();
+                telloManager.ConnectToTello();
             }
             if (sceneType != SceneType.FlyOnly)
                 simulator.CustomStart(this);
         }
-
-
         private void Update()
         {
             //if in sim run the frame, else called from telloUpdate in flyonly
@@ -95,7 +93,6 @@ namespace UnityControllerForTello
         public float yaw;
         public float pitch;
         public float roll;
-
         public void RunFrame()
         {
             connectionState = Tello.connectionState;
@@ -173,7 +170,7 @@ namespace UnityControllerForTello
 
         public void TakeOff()
         {
-            telloManager.OnTakeOff();
+            telloManager.AutoTakeOff();
         }
         public void PrimeProps()
         {
@@ -185,7 +182,6 @@ namespace UnityControllerForTello
         }
         public void ToggleAutoPilot(bool active)
         {
-            Debug.Log("Auto Pilot Active : " + active);
             headLessMode = true;
             autoPilot.ToggleAutoPilot(active);
         }
@@ -203,12 +199,6 @@ namespace UnityControllerForTello
             if (sceneType != SceneType.FlyOnly)
                 simulator.ResetSimulator();
         }
-
-        //private void FixedUpdate()
-        //{
-        //    if (sceneType != SceneType.FlyOnly)
-        //        simulator.CustomFixedUpdate();
-        //}
 
         Quaternion CalulateFinalInputs(float yaw, float elv, float roll, float pitch)
         {

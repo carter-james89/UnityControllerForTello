@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.44759667, g: 0.49756557, b: 0.5753523, a: 1}
+  m_IndirectSpecularColor: {r: 0.44759637, g: 0.49756557, b: 0.5753522, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -287,7 +287,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   headLess: 0
   PIDprofile: {fileID: 1447179867}
-  targetPoint: {fileID: 0}
+  targetPoint: {fileID: 2133040603}
   targetSpeed: 0.1
 --- !u!1 &39486190
 GameObject:
@@ -461,8 +461,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bdde6dcc358fa94887c2ae6aa9b3200, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  flightType: 0
+  flightStatus: 0
   drawFlightPath: 1
+  limitPathDistance: 0
   yaw: 0
   pitch: 0
   roll: 0
@@ -1304,6 +1305,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 100000, guid: 24a7b33e0d8a48e44b432119b4eccdab, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 24a7b33e0d8a48e44b432119b4eccdab, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -2645,13 +2650,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 21d4a2b9885ed384d9facf4ca448b1f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  PIDxP: 0.1
+  PIDxP: 0.3
   PIDxI: 0
   PIDxD: 0
-  PIDyP: 0.1
+  PIDyP: 0.3
   PIDyI: 0
   PIDyD: 0
-  PIDzP: 0.1
+  PIDzP: 0.3
   PIDzI: 0
   PIDzD: 0
   yawP: 0.01

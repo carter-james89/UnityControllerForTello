@@ -7,9 +7,11 @@ namespace UnityControllerForTello
 {
     public class TelloManager : MonoBehaviour
     {
-        public enum FlightType { Tracking, AutoPilot }
-        public FlightType flightType = FlightType.Tracking;
-        public bool drawFlightPath = true;
+        public enum FlightStatus { PreLaunch, PrimingProps, Launching, Flying}
+        public FlightStatus flightStatus = FlightStatus.PreLaunch;
+
+
+        public bool drawFlightPath = true, limitPathDistance = false;
         private TelloVideoTexture telloVideoTexture;
         public float yaw, pitch, roll;
 
@@ -24,7 +26,7 @@ namespace UnityControllerForTello
         public bool flying = false, hovering = false;
 
         List<FlightPoint> flightPoints;
-        float trackingOffsetX, trackingOffsetY, trackingOffsetZ;
+        //float trackingOffsetX, trackingOffsetY, trackingOffsetZ;
         float prevPosX, prevPosY, prevPosZ;
         Transform ground, telloGround, telloModel, flightPointsParent;
         public bool tracking { get; private set; } = false;
@@ -59,7 +61,7 @@ namespace UnityControllerForTello
         bool startingProps = false;
         int startUpCount = 0, startUpLimit = 300;
 
-        public delegate void EventDelegate();
+   //     public delegate void EventDelegate();
 
         public SceneManager sceneManager;
         InputController inputController;
@@ -89,23 +91,26 @@ namespace UnityControllerForTello
                 telloVideoTexture = FindObjectOfType<TelloVideoTexture>();
         }
 
-        public void CustomStart()
+        public void ConnectToTello()
         {
             Tello.startConnecting();
         }
 
         //This is called when you press 'T'
-        public void OnTakeOff()
+        public void AutoTakeOff()
         {
             Debug.Log("TakeOff!");
+            flightStatus = FlightStatus.Launching;
             var preFlightPanel = GameObject.Find("Pre Flight Panel");
             if (preFlightPanel)
                 preFlightPanel.SetActive(false);
             Tello.takeOff();
+            flightStatus = FlightStatus.Launching;
         }
         public void PrimeProps()
         {
             Debug.Log("Start Prop");
+            flightStatus = FlightStatus.PrimingProps;
             Tello.SuspendControllerUpdate();
             int i = 0;
             do
@@ -113,22 +118,23 @@ namespace UnityControllerForTello
                 i++;
                 Tello.StartMotors();
             } while (i < 900);
-            OnFlyBegin();
+           // OnFlyBegin();
             Tello.ResumeControllerUpdate();
             var preFlightPanel = GameObject.Find("Pre Flight Panel");
             if (preFlightPanel)
                 preFlightPanel.SetActive(false);
+            flightStatus = FlightStatus.Launching;
             UnityEngine.Debug.Log("props started");
         }
 
         //This is called when Tello.state.flying is set to true
-        void OnFlyBegin()
-        {
-            Debug.Log("flight begin");
-            BeginTracking();
-            flying = true;
-            Debug.Log("takeoff pos " + posX + " " + posY + " " + posZ);
-        }
+        //void OnFlyBegin()
+        //{
+        //    Debug.Log("flight begin");
+        //    BeginTracking();
+        //    flying = true;
+        //    Debug.Log("takeoff pos " + posX + " " + posY + " " + posZ);
+        //}
         public void OnLand()
         {
             Debug.Log("Land");
@@ -153,7 +159,7 @@ namespace UnityControllerForTello
 
         public void SendTelloInputs()
         {
-            if (flying)
+            if (flightStatus != FlightStatus.PreLaunch)
             {
                 Tello.controllerState.setAxis(sceneManager.yaw,sceneManager.elv,sceneManager.roll,sceneManager.pitch);
             }
@@ -174,14 +180,20 @@ namespace UnityControllerForTello
 
             UpdateLocalState();
 
-            if (flying & tracking)
+            if(flightStatus == FlightStatus.Flying)
             {
-                if (localOnGround != onGround)
-                {
-                    localOnGround = onGround;
-                }
-                Tracktello();
+                if (tracking)
+                    Tracktello();
             }
+
+            //if (flying & tracking)
+            //{
+            //    if (localOnGround != onGround)
+            //    {
+            //        localOnGround = onGround;
+            //    }
+            //    Tracktello();
+            //}
 
             updateReceived = false;
         }
@@ -197,7 +209,7 @@ namespace UnityControllerForTello
             originPoint = new Vector3(posX, posY, posZ);
         }
 
-        bool validTrackingFrame, survivedTakeoffOffset = false;
+        bool validTrackingFrame;
         Vector3 prevDeltaPos;
 
         float elevationOffset;
@@ -216,12 +228,12 @@ namespace UnityControllerForTello
             var zDif = dif.z;
 
             Debug.Log(flymode + " telloframe " + telloFrameCount);
-            if (flymode == 6 & !survivedTakeoffOffset)
+            if (flymode == 6 & flightStatus == FlightStatus.Launching)
             {
                 originPoint = currentPos;
                 Debug.Log("Y Offset " + originPoint + " tello frame count " + telloFrameCount);
                 originEuler = new Vector3(pitch, yaw, roll);
-                onTrackStartRot = new Quaternion(quatW, quatX, quatY, quatZ);
+               // onTrackStartRot = new Quaternion(quatW, quatX, quatY, quatZ);
                 ground.position -= new Vector3(0, height * .1f, 0);
                 flightPoints = new List<FlightPoint>();
                 CreateFlightPoint();
@@ -229,13 +241,9 @@ namespace UnityControllerForTello
                 Debug.Log("tello height set to " + height * .1f);
                 telloGround.position = transform.position - new Vector3(0, height * .1f, 0);
                 elevationOffset = height * .1f;
-                survivedTakeoffOffset = true;
-                //if (flightType == FlightType.AutoPilot)
-                //{
-                //    ActivateAutoPilot();
-                //}
+                flightStatus = FlightStatus.Flying;
             }
-            else if (survivedTakeoffOffset)
+            else if (flightStatus == FlightStatus.Flying)
             {
                 //valid tello frame
                 if (Mathf.Abs(xDif) < 2 & Mathf.Abs(yDif) < 2 & Mathf.Abs(zDif) < 2)
@@ -255,7 +263,6 @@ namespace UnityControllerForTello
                     // PlaceGameObject("Pre Offset " + telloFrameCount);
                     // transform.position += prevDeltaPos;
                     // PlaceGameObject("Post Offset " + telloFrameCount);
-
                 }
 
                 yaw = yaw * (180 / Mathf.PI);
@@ -272,10 +279,6 @@ namespace UnityControllerForTello
         //    newTrans.position = transform.position;
         //    newTrans.name = name;
         //}
-
-
-         
-
         /// <summary>
         /// Create a point for tracking
         /// </summary>
@@ -356,8 +359,6 @@ namespace UnityControllerForTello
             wifiStrength = state.wifiStrength;
             windState = state.windState;
         }
-
-
         public void CustomOnApplicationQuit()
         {
             Tello.onConnection -= Tello_onConnection;
@@ -365,7 +366,6 @@ namespace UnityControllerForTello
             Tello.onVideoData -= Tello_onVideoData;
             Tello.stopConnecting();
         }
-
         private void Tello_onVideoData(byte[] data)
         {
             if (telloVideoTexture != null)

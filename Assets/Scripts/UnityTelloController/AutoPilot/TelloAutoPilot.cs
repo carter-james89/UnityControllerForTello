@@ -7,15 +7,10 @@ namespace UnityControllerForTello
     public class TelloAutoPilot : MonoBehaviour
     {
         Transform targetDrone;
-
         PidController proximityPIDX, proximityPIDY, proximityPIDZ, yawPID;
-
         public bool headLess = false;
-
         public PIDProfile PIDprofile;
-
         SceneManager sceneManager;
-
         public Transform targetPoint;
         Transform currentTargetPoint;
 
@@ -23,11 +18,6 @@ namespace UnityControllerForTello
         float pointAssignedTime;
         float targetDist;
         public float targetSpeed;
-
-        public void ActivateAutoPilot()
-        {
-
-        }
 
         private void Awake()
         {
@@ -49,13 +39,14 @@ namespace UnityControllerForTello
                 pointAssignedEuler = sceneManager.activeDrone.eulerAngles;
                 pointAssignedPos = sceneManager.activeDrone.position;
                 pointAssignedTime = Time.time;
+                targetDrone.eulerAngles = currentTargetPoint.eulerAngles;
             }
             if (currentTargetPoint)
             {
                 var distCovered = (Time.time - pointAssignedTime) * targetSpeed;
                 float fracJourney = distCovered / targetDist;
                 targetDrone.position = Vector3.Lerp(pointAssignedPos, currentTargetPoint.position, fracJourney);
-                targetDrone.eulerAngles = Vector3.Lerp(pointAssignedEuler, currentTargetPoint.eulerAngles, fracJourney);
+               // targetDrone.eulerAngles = Vector3.Lerp(pointAssignedEuler, currentTargetPoint.eulerAngles, fracJourney);
             }
             //  Debug.Log("Run autopilot with time " + prevDeltaTime);
             timeSinceLastUpdate = Time.time - prevDeltaTime;
@@ -99,9 +90,7 @@ namespace UnityControllerForTello
             yawPID.ProcessVariable = yawError;
             double trgtYaw = yawPID.ControlVariable(deltaTime);
 
-            //  trgtYaw = yaw;
             return new Quaternion((float)trgtYaw, (float)trgtElv, (float)trgtRoll, (float)trgtPitch);
-            //SetControllerState((float)trgtYaw, (float)trgtElv, (float)trgtRoll, (float)trgtPitch);
         }
         public void ToggleAutoPilot(bool active)
         {
@@ -114,11 +103,11 @@ namespace UnityControllerForTello
                 ToggleAutoPilotOff();
             }
         }
-
         void ToggleAutoPilotOn()
         {
             if (!enabled)
             {
+                Debug.Log("AutoPilot Enabled");
                 targetDrone.gameObject.SetActive(true);
                 UpdatePIDValues(PIDprofile);
                 enabled = true;
@@ -128,6 +117,7 @@ namespace UnityControllerForTello
         {
             if (enabled)
             {
+                Debug.Log("AutoPilot Disabled");
                 targetDrone.gameObject.SetActive(false);
                 enabled = false;
             }
