@@ -19,6 +19,12 @@ namespace UnityControllerForTello
 
         Camera display2Cam;
 
+        public Quaternion finalInputs { get; private set; }
+        public float elv;
+        public float yaw;
+        public float pitch;
+        public float roll;
+
         TelloAutoPilot autoPilot;
         public InputController inputController { get; private set; }
 
@@ -82,20 +88,26 @@ namespace UnityControllerForTello
         private void Update()
         {
             //if in sim run the frame, else called from telloUpdate in flyonly
-            if(sceneType == SceneType.SimOnly)
+            if (sceneType == SceneType.SimOnly)
             {
                 RunFrame();
             }
         }
 
-        public Quaternion finalInputs { get; private set; }
-        public float elv;
-        public float yaw;
-        public float pitch;
-        public float roll;
+        float timeSinceLastUpdate;
+        float prevDeltaTime = 0;
+        System.TimeSpan telloDeltaTime;
+        float telloFrameCount = 0;
         public void RunFrame()
         {
             connectionState = Tello.connectionState;
+
+            telloFrameCount++;
+
+            timeSinceLastUpdate = Time.time - prevDeltaTime;
+            prevDeltaTime = Time.time;
+            var deltaTime1 = (int)(timeSinceLastUpdate * 1000);
+            telloDeltaTime = new System.TimeSpan(0, 0, 0, 0, (deltaTime1));
 
             var inputs = inputController.CheckInputs();
             bool receivedInput = true;
@@ -107,9 +119,31 @@ namespace UnityControllerForTello
                 autoPilot.ToggleAutoPilot(false);
             }
 
+            if(sceneType != SceneType.SimOnly)
+            {
+                switch (telloManager.flightStatus)
+                {
+                    case TelloManager.FlightStatus.PreLaunch:
+                        break;
+                    case TelloManager.FlightStatus.PrimingProps:
+                        break;
+                    case TelloManager.FlightStatus.Launching:
+                        break;
+                    case TelloManager.FlightStatus.Flying:
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            if (telloManager.flightStatus != TelloManager.FlightStatus.PreLaunch)
+            {
+                telloManager.TrackTello();
+            }
+
             if (autoPilot.enabled)
             {
-                inputs = autoPilot.RunAutoPilot();
+                inputs = autoPilot.RunAutoPilot(telloDeltaTime);
             }
             finalInputs = CalulateFinalInputs(inputs.x, inputs.y, inputs.z, inputs.w);
             yaw = finalInputs.x;
@@ -192,13 +226,13 @@ namespace UnityControllerForTello
         //    inputController.CheckInputs();
         //}
 
-        void BeginTracking()
-        {
-            Debug.Log("Begin Tracking");
-            telloManager.BeginTracking();
-            if (sceneType != SceneType.FlyOnly)
-                simulator.ResetSimulator();
-        }
+        //void BeginTracking()
+        //{
+        //    Debug.Log("Begin Tracking");
+        //    telloManager.BeginTracking();
+        //    if (sceneType != SceneType.FlyOnly)
+        //        simulator.ResetSimulator();
+        //}
 
         Quaternion CalulateFinalInputs(float yaw, float elv, float roll, float pitch)
         {

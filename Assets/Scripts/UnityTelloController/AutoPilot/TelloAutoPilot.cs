@@ -27,9 +27,8 @@ namespace UnityControllerForTello
             enabled = false;
         }
 
-        float timeSinceLastUpdate;
-        float prevDeltaTime = 0;
-        public Quaternion RunAutoPilot()
+
+        public Quaternion RunAutoPilot(System.TimeSpan deltaTime)
         {
             if(currentTargetPoint != targetPoint)
             {
@@ -49,11 +48,9 @@ namespace UnityControllerForTello
                // targetDrone.eulerAngles = Vector3.Lerp(pointAssignedEuler, currentTargetPoint.eulerAngles, fracJourney);
             }
             //  Debug.Log("Run autopilot with time " + prevDeltaTime);
-            timeSinceLastUpdate = Time.time - prevDeltaTime;
-            prevDeltaTime = Time.time;
-            var deltaTime1 = (int)(timeSinceLastUpdate * 1000);
 
-            System.TimeSpan deltaTime = new System.TimeSpan(0, 0, 0, 0, (deltaTime1));
+
+           
             var targetOffset = sceneManager.activeDrone.position - targetDrone.position;
             // offsetFromTarget = targetOffset;
 
