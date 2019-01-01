@@ -8,7 +8,6 @@ namespace UnityControllerForTello
     {
         Transform targetDrone;
         PidController proximityPIDX, proximityPIDY, proximityPIDZ, yawPID;
-        public bool headLess = false;
         public PIDProfile PIDprofile;
         SceneManager sceneManager;
         public Transform targetPoint;

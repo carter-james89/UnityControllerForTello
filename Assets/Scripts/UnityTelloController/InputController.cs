@@ -26,7 +26,7 @@ namespace UnityControllerForTello
        // public float yawError;
        // public Vector3 offsetFromTarget;
 
-        public bool headLess = false;
+        public bool headLessMode = false;
 
         public void CustomAwake(SceneManager sceneManager)
         {
