@@ -28,47 +28,58 @@ namespace UnityControllerForTello
                 ResetSimulator();
             }
         }
+        public void TakeOff()
+        {
+            transform.position += new Vector3(0, .8f, 0);
+            gameObject.GetComponent<Rigidbody>().useGravity = true;
+            sceneManager.SetHomePoint(transform.position);
+            sceneManager.flightStatus = SceneManager.FlightStatus.Flying;
+        }
         public void FixedUpdate()
         {
-            rigidBody.AddForce(transform.up * 9.81f);
-            bool receivingInput = false;
-            var pitchInput = sceneManager.pitch;
-            rigidBody.AddForce(transform.forward * pitchInput);
-            if (System.Math.Abs(pitchInput) > 0)
+            if(sceneManager.flightStatus == SceneManager.FlightStatus.Flying)
             {
-                receivingInput = true;
-            }
-            var elvInput = sceneManager.elv;
-            rigidBody.AddForce(transform.up * elvInput);
-            if (System.Math.Abs(elvInput) > 0)
-            {
-                receivingInput = true;
-            }
-            var rollInput = sceneManager.roll;
-            rigidBody.AddForce(transform.right * rollInput);
-            if (System.Math.Abs(rollInput) > 0)
-            {
-                
-                receivingInput = true;
-            }
+                rigidBody.AddForce(transform.up * 9.81f);
+                bool receivingInput = false;
+                var pitchInput = sceneManager.pitch;
+                rigidBody.AddForce(transform.forward * pitchInput);
+                if (System.Math.Abs(pitchInput) > 0)
+                {
+                    receivingInput = true;
+                }
+                var elvInput = sceneManager.elv;
+                rigidBody.AddForce(transform.up * elvInput);
+                if (System.Math.Abs(elvInput) > 0)
+                {
+                    receivingInput = true;
+                }
+                var rollInput = sceneManager.roll;
+                rigidBody.AddForce(transform.right * rollInput);
+                if (System.Math.Abs(rollInput) > 0)
+                {
 
-            var yawInput = sceneManager.yaw;
-            rigidBody.AddTorque(transform.up * yawInput);
-            if (System.Math.Abs(yawInput) > 0)
-            {
-                
-                receivingInput = true;
-            }
+                    receivingInput = true;
+                }
 
-            if (receivingInput & rigidBody.drag != inputDrag)
-            {
-                rigidBody.drag = inputDrag;
-                rigidBody.angularDrag = inputDrag * 9;
-            }
-            else if (!receivingInput & rigidBody.drag != drag)
-            {
-                rigidBody.drag = drag;
-                rigidBody.angularDrag = drag * 9;
+                var yawInput = sceneManager.yaw;
+                rigidBody.AddTorque(transform.up * yawInput);
+                if (System.Math.Abs(yawInput) > 0)
+                {
+
+                    receivingInput = true;
+                }
+
+                if (receivingInput & rigidBody.drag != inputDrag)
+                {
+                    rigidBody.drag = inputDrag;
+                    rigidBody.angularDrag = inputDrag * 9;
+                }
+                else if (!receivingInput & rigidBody.drag != drag)
+                {
+                    rigidBody.drag = drag;
+                    rigidBody.angularDrag = drag * 9;
+                }
+
             }
 
             //float yVel = rigidBody.velocity.y + Physics.gravity.y;

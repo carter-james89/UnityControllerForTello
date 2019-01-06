@@ -14,17 +14,10 @@ namespace UnityControllerForTello
 
         public float rawYaw, rawElv, rawRoll, rawPitch;
         float flipDir, flipDirX;
-        public float speed { get; private set; }
+        public float speed;
 
         Transform flipArrow;
         SceneManager sceneManager;
-
-        //   public PIDProfile PIDprofile;
-
-        //    Transform targetDrone;
-
-       // public float yawError;
-       // public Vector3 offsetFromTarget;
 
         public bool headLessMode = false;
 
@@ -34,189 +27,11 @@ namespace UnityControllerForTello
         }
         public void CustomStart()
         {
-            //targetDrone = sceneManager.telloManager.transform;
-            //if (sceneManager.sceneType == SceneManager.SceneType.SimOnly)
-            //{
-            //    targetDrone = sceneManager.simulator.transform;
-            //}
+
         }
 
-       // public bool autoPilotActive { get; private set; } = false;
-       // Transform autoPilotTarget;
-       // PidController proximityPIDX, proximityPIDY, proximityPIDZ, yawPID;
-
-        //public void ToggleAutoPilot(bool active)
-        //{
-        //    if (active)
-        //    {
-        //        if (PIDprofile)
-        //        {
-        //            autoPilotActive = true;
-        //            if (autoPilotActive)
-        //            {
-        //                if (proximityPIDX == null)
-        //                {
-        //                    UpdatePIDValues(PIDprofile);
-        //                }
-        //            }
-        //        }
-        //    }
-        //    else
-        //    {
-        //        Debug.Log("AutoPilot Disabled");
-        //        autoPilotActive = false;
-        //    }
-        //}
-        //public int deltaTime1;
-        //float timeSinceLastUpdate;
-        //float prevDeltaTime = 0;
-
-        //void UpdatePIDValues(PIDProfile newPIDprofile)
-        //{
-        //    Debug.Log("set pid values to " + newPIDprofile.name);
-        //    proximityPIDX = new PidController(newPIDprofile.PIDxP, newPIDprofile.PIDxI, newPIDprofile.PIDxD, 1, -1);
-        //    proximityPIDY = new PidController(newPIDprofile.PIDyP, newPIDprofile.PIDyI, newPIDprofile.PIDyD, 1, -1);
-        //    proximityPIDZ = new PidController(newPIDprofile.PIDzP, newPIDprofile.PIDzI, newPIDprofile.PIDzD, 1, -1);
-        //    yawPID = new PidController(newPIDprofile.yawP, newPIDprofile.yawI, newPIDprofile.yawD, 1, -1);
-        //    proximityPIDX.SetPoint = 0;
-        //    proximityPIDY.SetPoint = 0;
-        //    proximityPIDZ.SetPoint = 0;
-        //    yawPID.SetPoint = 0;
-        //}
-
-        //bool highPIDMode = true;
-        //void RunAutoPilot(float yaw)
-        //{
-        //    //  Debug.Log("Run autopilot with time " + prevDeltaTime);
-        //    // System.TimeSpan deltaTime = new System.TimeSpan(0,0,0,0,(int)(Time.deltaTime * 1000)); //0, 0, 0, (int)Time.deltaTime);
-
-        //    System.TimeSpan deltaTime = new System.TimeSpan(0, 0, 0, 0, (deltaTime1));
-        //    var targetOffset = targetDrone.position - autoPilotTarget.position;
-        //    offsetFromTarget = targetOffset;
-
-        //    if (PIDprofile.name == "Fly To Target (High)")
-        //    {
-        //        if (offsetFromTarget.magnitude < .3f & highPIDMode)
-        //        {
-
-        //            if (checkRoutine == null)
-        //            {
-        //                Debug.Log("In range check");
-        //                checkRoutine = StartCoroutine("CheckInRange");
-        //            }
-
-
-        //        }
-        //        else if (offsetFromTarget.magnitude > .3f & !highPIDMode)
-        //        {
-        //            //if (checkRoutine != null)
-        //            //{
-        //            //    Debug.Log("stop routine");
-        //            //    StopCoroutine(checkRoutine);
-        //            //    checkRoutine = null;
-        //            //}
-
-        //            highPIDMode = true;
-        //            UpdatePIDValues(PIDprofile);
-        //        }
-        //    }
-
-        //    //Debug.Log((int)Time.deltaTime);
-
-        //    proximityPIDX.ProcessVariable = targetOffset.x;
-        //    double trgtRoll = proximityPIDX.ControlVariable(deltaTime);
-        //    //if(double.IsNaN(trgtRoll))
-        //    //{
-        //    //    trgtRoll = 0;
-        //    //}
-
-        //    proximityPIDY.ProcessVariable = targetOffset.y;
-        //    double trgtElv = proximityPIDY.ControlVariable(deltaTime);
-        //    //if(double.IsNaN(trgtElv))
-        //    //{
-        //    //    trgtElv = 0;
-        //    //}
-
-        //    proximityPIDZ.ProcessVariable = targetOffset.z;
-        //    double trgtPitch = proximityPIDZ.ControlVariable(deltaTime);
-        //    //if(double.IsNaN(trgtPitch))
-        //    //{
-        //    //    trgtPitch = 0;
-        //    //}
-
-        //    yawError = targetDrone.eulerAngles.y - autoPilotTarget.eulerAngles.y;
-
-        //    if (yawError < -180)
-        //        yawError = 360 - System.Math.Abs(yawError);
-        //    else if (yawError > 180)
-        //        yawError = -(360 - yawError);
-
-        //    //yawError = Quaternion.eulerAngles(yawErrorRot).y;
-        //    // yawError = Vector3.Angle(targetDrone.forward, autoPilotTarget.forward);
-        //    yawPID.ProcessVariable = yawError;
-        //    double trgtYaw = yawPID.ControlVariable(deltaTime);
-
-        //    //  trgtYaw = yaw;
-
-        //    SetControllerState((float)trgtYaw, (float)trgtElv, (float)trgtRoll, (float)trgtPitch);
-        //}
-        // Coroutine checkRoutine;
-        //void SetControllerState(float yaw, float elv, float roll, float pitch)
-        //{
-        //    if (headLess)
-        //    {
-        //        var xDir = new Vector3(roll, 0, 0);
-        //        var yDir = new Vector3(0, 0, pitch);
-
-        //        var headLessDir = transform.position + (xDir + yDir);
-
-        //        var headLessDirX = Vector3.Project(headLessDir, targetDrone.right.normalized);
-        //        roll = headLessDirX.magnitude;
-        //        var headLessDirz = Vector3.Project(headLessDir, targetDrone.forward.normalized);
-        //        pitch = headLessDirz.magnitude;
-
-        //        var crossProduct = Vector3.Dot(headLessDirz, targetDrone.forward.normalized);
-
-        //        if (crossProduct < 0)
-        //        {
-        //            // roll = -roll;
-        //            pitch = -pitch;
-        //        }
-        //        crossProduct = Vector3.Dot(headLessDirX, targetDrone.right.normalized);
-
-        //        if (crossProduct < 0)
-        //        {
-        //            roll = -roll;
-        //            // pitch = -pitch;
-        //        }
-        //    }
-
-        //    //if (speed < 0)
-        //    //    speed = .1f;
-        //    inputElv = elv * speed;
-        //    inputRoll = roll * speed;
-        //    inputPitch = pitch * speed;
-        //    inputYaw = yaw * speed;
-        //}
-
-        //IEnumerator CheckInRange()
-        //{
-        //    Debug.Log("checking in range");
-        //    yield return new WaitForSeconds(5);
-        //    if (offsetFromTarget.magnitude < .3f & highPIDMode)
-        //    {
-        //        highPIDMode = false;
-        //        UpdatePIDValues(GameObject.Find("Fly To Target (Low)").GetComponent<PIDProfile>());
-        //    }
-        //    else
-        //    {
-        //        Debug.Log("not in range");
-        //    }
-        //    checkRoutine = null;
-        //}
-        public Quaternion CheckInputs()
+        public void GetFlightCommmands()
         {
-
             if (Input.GetKeyDown(KeyCode.P))
             {
                 sceneManager.ToggleAutoPilot(true);
@@ -233,6 +48,9 @@ namespace UnityControllerForTello
             {
                 sceneManager.Land();
             }
+        }
+        public Quaternion CheckFlightInputs()
+        {          
             //timeSinceLastUpdate = Time.time - prevDeltaTime;
             //prevDeltaTime = Time.time;
             //deltaTime1 = (int)(timeSinceLastUpdate * 1000);

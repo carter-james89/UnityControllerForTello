@@ -13,6 +13,8 @@ namespace UnityControllerForTello
         public Transform targetPoint;
         Transform currentTargetPoint;
 
+        Transform homePoint;
+
         Vector3 pointAssignedEuler, pointAssignedPos;
         float pointAssignedTime;
         float targetDist;
@@ -26,6 +28,13 @@ namespace UnityControllerForTello
             enabled = false;
         }
 
+        public void SetHomePoint(Vector3 position)
+        {
+            Debug.Log("Home point updated");
+            homePoint = new GameObject("Home Point").transform;
+            homePoint.position = position;
+            DebugVector.DrawVector(homePoint, Color.red, Color.green, Color.blue, Vector3.one);
+        }
 
         public Quaternion RunAutoPilot(System.TimeSpan deltaTime)
         {
@@ -105,6 +114,7 @@ namespace UnityControllerForTello
             {
                 Debug.Log("AutoPilot Enabled");
                 targetDrone.gameObject.SetActive(true);
+                targetDrone.position = sceneManager.activeDrone.position;
                 UpdatePIDValues(PIDprofile);
                 enabled = true;
             }

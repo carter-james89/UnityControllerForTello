@@ -7,8 +7,11 @@ namespace UnityControllerForTello
 {
     public class SceneManager : SingletonMonoBehaviour<SceneManager>
     {
-        public enum SceneType { FlyOnly, SimOnly, FlySim }
+        public enum SceneType { FlyOnly, SimOnly }
         public SceneType sceneType;
+        public enum FlightStatus { PreLaunch, PrimingProps, Launching, Flying, Landing }
+        public FlightStatus flightStatus = FlightStatus.PreLaunch;
+
         public Tello.ConnectionState connectionState;
         public TelloManager telloManager { get; private set; }
         public DroneSimulator simulator { get; private set; }
@@ -41,11 +44,14 @@ namespace UnityControllerForTello
                 Debug.LogError("No Tello Manager Found");
 
             //so we can roll/pitch tello model without the camera moving on those axis
-            display2Cam = transform.Find("Tracking Camera (Display 2)").GetComponent<Camera>();
+            var trackingCamObject = transform.Find("Tracking Camera (Display 2)");
+            if (trackingCamObject)
+                display2Cam = trackingCamObject.GetComponent<Camera>();
             if (sceneType != SceneType.SimOnly)
             {
                 telloManager.CustomAwake();
-                display2Cam.transform.SetParent(telloManager.transform);
+                if (display2Cam)
+                    display2Cam.transform.SetParent(telloManager.transform);
             }
             else
                 telloManager.gameObject.SetActive(false);
@@ -59,14 +65,16 @@ namespace UnityControllerForTello
             //Simulator
             simulator = FindObjectOfType<DroneSimulator>();
             if (!simulator)
-                Debug.LogError("No tello simulator found");
+                Debug.Log("No tello simulator found");
             if (sceneType == SceneType.FlyOnly)
             {
-                simulator.gameObject.SetActive(false);
+                if (simulator)
+                    simulator.gameObject.SetActive(false);
                 activeDrone = telloManager.gameObject.transform;
             }
             else if (sceneType == SceneType.SimOnly)
             {
+                Debug.Log("Begin Sim");
                 activeDrone = simulator.gameObject.transform;
                 display2Cam.transform.SetParent(simulator.transform);
             }
@@ -85,13 +93,17 @@ namespace UnityControllerForTello
         }
         private void Update()
         {
+            inputController.GetFlightCommmands();
+            if (flightStatus == FlightStatus.PreLaunch)
+                inputController.CheckFlightInputs();
             //if in sim run the frame, else called from telloUpdate in flyonly
             if (sceneType == SceneType.SimOnly)
             {
                 RunFrame();
             }
-            else if(sceneType == SceneType.FlyOnly)
+            else if (sceneType == SceneType.FlyOnly)
             {
+
                 telloManager.CheckForUpdate();
             }
         }
@@ -110,7 +122,7 @@ namespace UnityControllerForTello
             var deltaTime1 = (int)(timeSinceLastUpdate * 1000);
             telloDeltaTime = new System.TimeSpan(0, 0, 0, 0, (deltaTime1));
             //inputs
-            var inputs = inputController.CheckInputs();
+            var inputs = inputController.CheckFlightInputs();
             bool receivedInput = true;
             if (inputs.w == 0 & inputs.x == 0 & inputs.y == 0 & inputs.z == 0)
                 receivedInput = false;
@@ -120,16 +132,16 @@ namespace UnityControllerForTello
                 autoPilot.ToggleAutoPilot(false);
             }
             //if we are flying the tello
-            if(sceneType != SceneType.SimOnly)
+            if (sceneType != SceneType.SimOnly)
             {
-                switch (telloManager.flightStatus)
+                switch (flightStatus)
                 {
-                    case TelloManager.FlightStatus.Launching:
+                    case FlightStatus.Launching:
                         telloManager.CheckForLaunchComplete();
                         break;
-                    case TelloManager.FlightStatus.Flying:
+                    case FlightStatus.Flying:
                         bool validFrame = telloManager.SetTelloPosition();
-                        if(!validFrame & autoPilot.enabled)
+                        if (!validFrame & autoPilot.enabled)
                         {
                             Debug.Log("AutoPilot disabled because Tello Lost Tracking");
                             ToggleAutoPilot(false);
@@ -200,7 +212,21 @@ namespace UnityControllerForTello
 
         public void TakeOff()
         {
-            telloManager.AutoTakeOff();
+            if (flightStatus == FlightStatus.PreLaunch)
+            {
+                Debug.Log("AutoTakeoff");
+                switch (sceneType)
+                {
+                    case SceneType.FlyOnly:
+                        telloManager.AutoTakeOff();
+                        break;
+                    case SceneType.SimOnly:
+                        simulator.TakeOff();
+                        break;
+                    default:
+                        break;
+                }
+            }
         }
         public void PrimeProps()
         {
@@ -214,6 +240,11 @@ namespace UnityControllerForTello
         {
             inputController.headLessMode = active;
             autoPilot.ToggleAutoPilot(active);
+        }
+        public void SetHomePoint(Vector3 globalPos)
+        {
+            if (autoPilot)
+                autoPilot.SetHomePoint(globalPos);
         }
         //if fly mode, called from Tello_onUpdate
         //if sim mode, called from update every couple of seconds.
@@ -259,6 +290,10 @@ namespace UnityControllerForTello
                     // pitch = -pitch;
                 }
             }
+
+            if (autoPilot.enabled)
+                inputController.speed = 1;
+
             elv *= inputController.speed;
             roll *= inputController.speed;
             pitch *= inputController.speed;
