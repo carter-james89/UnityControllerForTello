@@ -5,23 +5,21 @@ using TelloLib;
 
 namespace UnityControllerForTello
 {
-    public class InputController :MonoBehaviour
+    public class InputController : MonoBehaviour
     {
         public enum InputType { Thrustmaster16000, Keyboard, Rift, ThrustmasterThrottle }
         public InputType inputType = InputType.Keyboard;
 
         enum FlipDir { Forward, Left, Backward, Right, ForwardRight, ForwardLeft, BackRight, BackLeft, None }
 
-        public float inputPitch, inputYaw, inputRoll, inputElv, flipDir, flipDirX, speed;
+        public float rawYaw, rawElv, rawRoll, rawPitch;
+        float flipDir, flipDirX;
+        public float speed;
 
         Transform flipArrow;
         SceneManager sceneManager;
 
-        Transform newObject, targetDrone;
-
-        public Vector3 offsetFromTarget;
-
-        public bool headLess = false;
+        public bool headLessMode = false;
 
         public void CustomAwake(SceneManager sceneManager)
         {
@@ -29,137 +27,33 @@ namespace UnityControllerForTello
         }
         public void CustomStart()
         {
-            targetDrone = sceneManager.telloManager.transform;
-            if(sceneManager.sceneType == SceneManager.SceneType.SimOnly)
-            {
-                targetDrone = sceneManager.simulator.transform;
-            }
 
-            //newObject = new GameObject().transform;
-            //newObject.position = Vector3.zero;
         }
-        public float PIDxP = .1f, PIDxI = 0, PIDxD = .0f;
-        public float PIDyP = .1f, PIDyI = 0, PIDyD = .0f;
-        public float PIDzP = .1f, PIDzI = 0, PIDzD = .0f;
-        public bool autoPilotActive { get; private set; } = false;
-        public Transform autoPilotTarget;
-        PidController proximityPIDX, proximityPIDY, proximityPIDZ, yawPID;
 
-        public void ToggleAutoPilot(bool active)
+        public void GetFlightCommmands()
         {
-            autoPilotActive = active;
-            if(autoPilotActive)
+            if (Input.GetKeyDown(KeyCode.P))
             {
-                if(proximityPIDX == null)
-                {
-                    Debug.Log("set pid values");
-                    proximityPIDX = new PidController(PIDxP,PIDxI,PIDxD,1,-1);
-                    proximityPIDY = new PidController(PIDyP,PIDyI,PIDyD,1,-1);
-                    proximityPIDZ = new PidController(PIDzP,PIDzI,PIDzD,1,-1);
-                    yawPID = new PidController(PIDzP,PIDzI,PIDzD,1,-1);
-                    proximityPIDX.SetPoint = 0;
-                    proximityPIDY.SetPoint = 0;
-                    proximityPIDZ.SetPoint = 0;
-                    yawPID.SetPoint = 0;
-                }
+                sceneManager.ToggleAutoPilot(true);
+            }
+            if (Input.GetKeyDown(KeyCode.T))
+            {
+                sceneManager.TakeOff();
+            }
+            else if (Input.GetKeyDown(KeyCode.V))
+            {
+                sceneManager.PrimeProps();
+            }
+            else if (Input.GetKeyDown(KeyCode.L))
+            {
+                sceneManager.Land();
             }
         }
-        public int deltaTime1;
-        float timeSinceLastUpdate;
-        float prevDeltaTime = 0;
-
-        void RunAutoPilot(float yaw)
-        {
-
-            //  Debug.Log("Run autopilot with time " + prevDeltaTime);
-            // System.TimeSpan deltaTime = new System.TimeSpan(0,0,0,0,(int)(Time.deltaTime * 1000)); //0, 0, 0, (int)Time.deltaTime);
-
-            System.TimeSpan deltaTime = new System.TimeSpan(0,0,0,0,(int)(Time.deltaTime * 1000));
-            var targetOffset = targetDrone.position - autoPilotTarget.position;
-            offsetFromTarget = targetOffset;
-            //Debug.Log((int)Time.deltaTime);
-
-            proximityPIDX.ProcessVariable = targetOffset.x;
-            double trgtRoll = proximityPIDX.ControlVariable(deltaTime);
-            //if(double.IsNaN(trgtRoll))
-            //{
-            //    trgtRoll = 0;
-            //}
-
-            proximityPIDY.ProcessVariable = targetOffset.y;
-            double trgtElv = proximityPIDY.ControlVariable(deltaTime);
-            //if(double.IsNaN(trgtElv))
-            //{
-            //    trgtElv = 0;
-            //}
-
-            proximityPIDZ.ProcessVariable = targetOffset.z;
-            double trgtPitch = proximityPIDZ.ControlVariable(deltaTime);
-            //if(double.IsNaN(trgtPitch))
-            //{
-            //    trgtPitch = 0;
-            //}
-
-            var yawError = targetDrone.eulerAngles.y - autoPilotTarget.eulerAngles.y;
-            yawPID.ProcessVariable = yawError;
-            double trgtYaw = yawPID.ControlVariable(deltaTime);
-
-            trgtYaw = yaw;
-
-            SetControllerState((float)trgtYaw,(float)trgtElv,(float)trgtRoll,(float)trgtPitch);
-        }
-
-        void SetControllerState(float yaw,float elv,float roll,float pitch)
-        {
-            //if(float.IsNaN(elv))
-            //    elv = 0;
-            //if(float.IsNaN(yaw))
-            //    yaw = 0;
-            //if(float.IsNaN(pitch))
-            //    pitch = 0;
-            //if(float.IsNaN(roll))
-            //    roll = 0;
-
-            if(headLess)
-            {
-                var xDir = new Vector3(roll,0,0);
-                var yDir = new Vector3(0,0,pitch);
-
-                var headLessDir = transform.position + (xDir + yDir);
-
-                var headLessDirX = Vector3.Project(headLessDir,targetDrone.right.normalized);
-                roll = headLessDirX.magnitude;
-                var headLessDirz = Vector3.Project(headLessDir,targetDrone.forward.normalized);
-                pitch = headLessDirz.magnitude;
-
-                var crossProduct = Vector3.Dot(headLessDirz,targetDrone.forward.normalized);
-
-                if(crossProduct < 0)
-                {
-                    // roll = -roll;
-                    pitch = -pitch;
-                }
-                crossProduct = Vector3.Dot(headLessDirX,targetDrone.right.normalized);
-
-                if(crossProduct < 0)
-                {
-                    roll = -roll;
-                    // pitch = -pitch;
-                }
-            }
-
-            //if (speed < 0)
-            //    speed = .1f;
-            inputElv = elv * speed;
-            inputRoll = roll * speed;
-            inputPitch = pitch * speed;
-            inputYaw = yaw * speed;
-        }
-        public void CheckInputs()
-        {
-            timeSinceLastUpdate = Time.time - prevDeltaTime;
-            prevDeltaTime = Time.time;
-            deltaTime1 = (int)(timeSinceLastUpdate * 1000);
+        public Quaternion CheckFlightInputs()
+        {          
+            //timeSinceLastUpdate = Time.time - prevDeltaTime;
+            //prevDeltaTime = Time.time;
+            //deltaTime1 = (int)(timeSinceLastUpdate * 1000);
 
             //  Debug.Log(timeSinceLastUpdate * 1000);
             // Debug.Log("check inputs");           
@@ -168,7 +62,7 @@ namespace UnityControllerForTello
             float rx = 0f;
             float ry = 0f;
 
-            switch(inputType)
+            switch (inputType)
             {
                 case InputType.Keyboard:
                     lx = Input.GetAxis("Keyboard Yaw");
@@ -199,11 +93,11 @@ namespace UnityControllerForTello
                     break;
             }
 
-            if(speed == 0)
+            if (speed == 0)
             {
                 speed = .5f;
             }
-            else if(speed < 0)
+            else if (speed < 0)
             {
                 speed = 1 + speed;
                 speed /= 2;
@@ -214,63 +108,70 @@ namespace UnityControllerForTello
                 speed += .5f;
             }
 
-            if(inputType != InputType.ThrustmasterThrottle)
+            if (inputType != InputType.ThrustmasterThrottle)
                 speed = 1;
 
-            if(autoPilotTarget & autoPilotActive)
-            {
-                if(ly != 0 || rx != 0 || ry != 0)
-                {
-                    autoPilotActive = false;
-                }
-                else
-                {
-                    RunAutoPilot(lx);
+            rawYaw = lx;
+            rawElv = ly;
+            rawRoll = rx;
+            rawPitch = ry;
+            // return new Quaternion(lx, ly, rx, ry);
+            return new Quaternion(rawYaw, rawElv, rawRoll, rawPitch);
 
-                    var distFromTarget = Vector3.Distance(targetDrone.position,autoPilotTarget.position);
-                    atTarget = false;
-                    //Debug.Log(distFromTarget +" from target");
-                    if(distFromTarget < .3f)
-                    {
-                        atTarget = true;
-                        if(currentFlightPath)
-                        {
-                            ReachedPathPoint();
-                        }
-                    }
-                }
-            }
-            else
-            {
-                SetControllerState(lx,ly,rx,ry);
-            }
+            //if (autoPilotTarget & autoPilotActive)
+            //{
+            //    //if any update is received from pilot, deactivate autopilot
+            //    if (ly != 0 || rx != 0 || ry != 0)
+            //    {
+            //        autoPilotActive = false;
+            //    }
+            //    else
+            //    {
+            //        RunAutoPilot(lx);
+            //        var distFromTarget = Vector3.Distance(targetDrone.position, autoPilotTarget.position);
+            //        atTarget = false;
+            //        //Debug.Log(distFromTarget +" from target");
+            //        if (distFromTarget < .2f)
+            //        {
+            //            atTarget = true;
+            //            if (currentFlightPath)
+            //            {
+            //                ReachedPathPoint();
+            //            }
+            //        }
+            //    }
+            //}
+            //else
+            //{
+            //    SetControllerState(lx, ly, rx, ry);
+            //}
 
             //if (inputType == InputType.ThrustmasterThrottle)
             //    CheckForFlip(flipDir, flipDirX);           
         }
-        public bool atTarget { get; private set; }
-        FlightPath currentFlightPath;
-        public void BeginFlightPath(FlightPath pathToFly)
-        {
-            Debug.Log("Begin Flight Path");
-            currentFlightPath = pathToFly;
-            autoPilotTarget = currentFlightPath.flightPoints[0];
-        }
-        void ReachedPathPoint()
-        {
-            Debug.Log("Find next flight point");
-            int nextTarget = 0;
-            for(int i = 0;i < currentFlightPath.flightPoints.Count;i++)
-            {
-                if(autoPilotTarget == currentFlightPath.flightPoints[i])
-                {
-                    if(i != currentFlightPath.flightPoints.Count - 1)
-                        nextTarget = i + 1;
+        // public bool atTarget { get; private set; }
+        //   FlightPath currentFlightPath;
+        //public void BeginFlightPath(FlightPath pathToFly)
+        //{
+        //    Debug.Log("Begin Flight Path");
+        //    currentFlightPath = pathToFly;
+        //    autoPilotTarget = currentFlightPath.flightPoints[0];
+        //}
+        //void ReachedPathPoint()
+        //{
+        //    Debug.Log("Find next flight point");
+        //    int nextTarget = 0;
+        //    for (int i = 0; i < currentFlightPath.flightPoints.Count; i++)
+        //    {
+        //        if (autoPilotTarget == currentFlightPath.flightPoints[i])
+        //        {
+        //            if (i != currentFlightPath.flightPoints.Count - 1)
+        //                nextTarget = i + 1;
 
-                    autoPilotTarget = currentFlightPath.flightPoints[nextTarget];
-                    break;
-                }
-            }
-        }
+        //            autoPilotTarget = currentFlightPath.flightPoints[nextTarget];
+        //            break;
+        //        }
+        //    }
+        //}
     }
 }

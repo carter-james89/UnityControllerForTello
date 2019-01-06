@@ -1,0 +1,11 @@
+Thanks for downloading! I hope you find useful.
+
+If you like these materials i have a package with more than 40 realistic materials, and i planing to add more. So check it out before the price raise.
+
+Note: I released these materials in version 2017.1.0f3, but some textures like 'Roughness', 'Ambient Occlusion', and 'Height' only work in newer versions.
+
+If have any problems, doubts, or suggestions, please let me know.
+
+My portfolio: https://www.artstation.com/mgodoi
+
+My e-mail: mlagogodoi@gmail.com
