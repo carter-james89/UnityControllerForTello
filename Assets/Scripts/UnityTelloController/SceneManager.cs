@@ -16,6 +16,7 @@ namespace UnityControllerForTello
         public TelloManager telloManager { get; private set; }
         public DroneSimulator simulator { get; private set; }
 
+        [HideInInspector]
         public Transform activeDrone;
 
         Camera display2Cam;
