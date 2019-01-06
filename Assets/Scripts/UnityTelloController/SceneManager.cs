@@ -130,7 +130,7 @@ namespace UnityControllerForTello
             if (receivedInput & autoPilot.enabled)
             {
                 Debug.Log("AutoPilot disabled due to user input");
-                autoPilot.ToggleAutoPilot(false);
+                ToggleAutoPilot(false);
             }
             //if we are flying the tello
             if (sceneType != SceneType.SimOnly)
@@ -239,7 +239,7 @@ namespace UnityControllerForTello
         }
         public void ToggleAutoPilot(bool active)
         {
-            inputController.headLessMode = active;
+          //  inputController.headLessMode = active;
             autoPilot.ToggleAutoPilot(active);
         }
         public void SetHomePoint(Vector3 globalPos)
@@ -264,7 +264,11 @@ namespace UnityControllerForTello
 
         Quaternion CalulateFinalInputs(float yaw, float elv, float roll, float pitch)
         {
-            if (inputController.headLessMode)
+            bool autoPilotActive = false;
+            if (autoPilot)
+                autoPilotActive = autoPilot.enabled;
+
+            if (inputController.headLessMode || autoPilotActive)
             {
                 var xDir = new Vector3(roll, 0, 0);
                 var yDir = new Vector3(0, 0, pitch);

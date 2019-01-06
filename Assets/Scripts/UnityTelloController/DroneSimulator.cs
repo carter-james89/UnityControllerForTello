@@ -72,12 +72,12 @@ namespace UnityControllerForTello
                 if (receivingInput & rigidBody.drag != inputDrag)
                 {
                     rigidBody.drag = inputDrag;
-                    rigidBody.angularDrag = inputDrag * 9;
+                    rigidBody.angularDrag = inputDrag ;
                 }
                 else if (!receivingInput & rigidBody.drag != drag)
                 {
                     rigidBody.drag = drag;
-                    rigidBody.angularDrag = drag * 9;
+                    rigidBody.angularDrag = drag * .9f;
                 }
 
             }
