@@ -292,7 +292,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   PIDprofile: {fileID: 1447179867}
   targetPoint: {fileID: 0}
-  targetSpeed: 0.25
+  targetSpeed: 0.18
 --- !u!1 &39486190
 GameObject:
   m_ObjectHideFlags: 0
@@ -451,7 +451,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bdde6dcc358fa94887c2ae6aa9b3200, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  drawFlightPath: 1
+  drawFlightPath: 0
   limitPathDistance: 0
   yaw: 0
   pitch: 0
@@ -2403,15 +2403,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 21d4a2b9885ed384d9facf4ca448b1f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  PIDxP: 1
-  PIDxI: 0.3
-  PIDxD: 0
-  PIDyP: 1
-  PIDyI: 0.3
+  PIDxP: 1.5
+  PIDxI: 0.1
+  PIDxD: 0.5
+  PIDyP: 1.5
+  PIDyI: 1.5
   PIDyD: 0
-  PIDzP: 1
-  PIDzI: 0.3
-  PIDzD: 0
+  PIDzP: 1.5
+  PIDzI: 0.1
+  PIDzD: 0.5
   yawP: 0.05
   yawI: 0
   yawD: 0
@@ -2656,8 +2656,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1847795315}
-  m_LocalRotation: {x: -0, y: -0.9366421, z: -0, w: -0.35028777}
-  m_LocalPosition: {x: 2.132, y: 0.411, z: 1.518}
+  m_LocalRotation: {x: -0, y: -0.93664217, z: -0, w: -0.35028777}
+  m_LocalPosition: {x: 0.69437885, y: 1.1620001, z: 1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 588011290}
@@ -3050,10 +3050,10 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2133040602}
-  m_LocalRotation: {x: -0, y: 0.99549687, z: -0, w: -0.09479492}
-  m_LocalPosition: {x: -3.29, y: 0.25, z: 2.6723}
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalPosition: {x: -1.114, y: 0.771, z: 1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 588011290}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 190.879, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}

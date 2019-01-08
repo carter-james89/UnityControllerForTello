@@ -60,42 +60,50 @@ namespace UnityControllerForTello
 
            
             var targetOffset = sceneManager.activeDrone.position - targetDrone.position;
-            // offsetFromTarget = targetOffset;
 
-            proximityPIDX.ProcessVariable = targetOffset.x;
-            double trgtRoll = proximityPIDX.ControlVariable(deltaTime);
-            //if(double.IsNaN(trgtRoll))
-            //{
-            //    trgtRoll = 0;
-            //}
+            if (targetOffset.magnitude > .1f || sceneManager.sceneType == SceneManager.SceneType.SimOnly)
+            {
+                // offsetFromTarget = targetOffset;
 
-            proximityPIDY.ProcessVariable = targetOffset.y;
-            double trgtElv = proximityPIDY.ControlVariable(deltaTime);
-            //if(double.IsNaN(trgtElv))
-            //{
-            //    trgtElv = 0;
-            //}
+                proximityPIDX.ProcessVariable = targetOffset.x;
+                double trgtRoll = proximityPIDX.ControlVariable(deltaTime);
+                //if(double.IsNaN(trgtRoll))
+                //{
+                //    trgtRoll = 0;
+                //}
 
-            proximityPIDZ.ProcessVariable = targetOffset.z;
-            double trgtPitch = proximityPIDZ.ControlVariable(deltaTime);
-            //if(double.IsNaN(trgtPitch))
-            //{
-            //    trgtPitch = 0;
-            //}
+                proximityPIDY.ProcessVariable = targetOffset.y;
+                double trgtElv = proximityPIDY.ControlVariable(deltaTime);
+                //if(double.IsNaN(trgtElv))
+                //{
+                //    trgtElv = 0;
+                //}
 
-            var yawError = sceneManager.activeDrone.eulerAngles.y - targetDrone.eulerAngles.y;
+                proximityPIDZ.ProcessVariable = targetOffset.z;
+                double trgtPitch = proximityPIDZ.ControlVariable(deltaTime);
+                //if(double.IsNaN(trgtPitch))
+                //{
+                //    trgtPitch = 0;
+                //}
 
-            if (yawError < -180)
-                yawError = 360 - System.Math.Abs(yawError);
-            else if (yawError > 180)
-                yawError = -(360 - yawError);
+                var yawError = sceneManager.activeDrone.eulerAngles.y - targetDrone.eulerAngles.y;
 
-            //yawError = Quaternion.eulerAngles(yawErrorRot).y;
-            // yawError = Vector3.Angle(targetDrone.forward, autoPilotTarget.forward);
-            yawPID.ProcessVariable = yawError;
-            double trgtYaw = yawPID.ControlVariable(deltaTime);
+                if (yawError < -180)
+                    yawError = 360 - System.Math.Abs(yawError);
+                else if (yawError > 180)
+                    yawError = -(360 - yawError);
 
-            return new Quaternion((float)trgtYaw, (float)trgtElv, (float)trgtRoll, (float)trgtPitch);
+                //yawError = Quaternion.eulerAngles(yawErrorRot).y;
+                // yawError = Vector3.Angle(targetDrone.forward, autoPilotTarget.forward);
+                yawPID.ProcessVariable = yawError;
+                double trgtYaw = yawPID.ControlVariable(deltaTime);
+                return new Quaternion((float)trgtYaw, (float)trgtElv, (float)trgtRoll, (float)trgtPitch);
+            }
+            else
+                return new Quaternion(0, 0, 0, 0);
+          
+
+            
         }
         public void ToggleAutoPilot(bool active)
         {
