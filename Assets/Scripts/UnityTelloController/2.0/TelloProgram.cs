@@ -9,14 +9,13 @@ public class TelloProgram : MonoBehaviour
     [SerializeField]
     private GameObject tello;
 
+
     [SerializeField]
     private PIDAutoPilot _autoPilot;
-
-    [SerializeField]
-    private PIDProfile _PIDprofile;
-
+    public PIDAutoPilot.TranslationStyle autoPilotTransitionSytle = PIDAutoPilot.TranslationStyle.Linear;
     [SerializeField]
     private Transform _autoPilotTarget;
+
 
     [SerializeField]
     private PilotInputs _pilotInupts;
@@ -70,6 +69,10 @@ public class TelloProgram : MonoBehaviour
         if (_autoPilotTarget && _autoPilot.currentTargetPoint != _autoPilotTarget)
         {
             _autoPilot.SetNewTarget(_autoPilotTarget);
+        }
+        if(autoPilotTransitionSytle != _autoPilot.translationStyle)
+        {
+            _autoPilot.SetTransitionSytle(autoPilotTransitionSytle);
         }
     }
 }

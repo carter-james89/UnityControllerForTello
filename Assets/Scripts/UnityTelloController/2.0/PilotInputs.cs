@@ -9,17 +9,17 @@ public class PilotInputs : MonoBehaviour
     public InputType inputType = InputType.Keyboard;
 
     private int _lastInputFrame = 0;
-    private PilotInputValues _inputValues;
+    private PilotInputValues _currentInputValues;
     public PilotInputValues pilotInputValues
     {
         get
         {
-            if(Time.frameCount != _lastInputFrame) //only check inputs once a frame, as they dont change within a single frame
+            if (Time.frameCount != _lastInputFrame) //only check inputs once a frame, as they dont change within a single frame
             {
-                _inputValues = CheckFlightInputs();
+                _currentInputValues = CheckFlightInputs();
                 _lastInputFrame = Time.frameCount;
             }
-            return _inputValues;
+            return _currentInputValues;
         }
     }
 
@@ -33,6 +33,19 @@ public class PilotInputs : MonoBehaviour
     public Action primeProps;
 
     public Action toggleAutoPilot;
+
+    public bool UserInputingValues()
+    {
+        if(
+            pilotInputValues.yaw != 0 ||
+             pilotInputValues.pitch != 0 ||
+            pilotInputValues.roll != 0 ||
+             Input.GetKey(KeyCode.L))
+        {
+            return true;
+        }
+        return false;
+    }
 
     public void GetFlightCommmands()
     {
@@ -62,13 +75,13 @@ public class PilotInputs : MonoBehaviour
         public float throttle;
     }
 
-   /// <summary>
-   /// Check the pilot input based on <see cref="InputType"/>
-   /// </summary>
-   /// <remarks>
-   /// Override to add new input methods
-   /// </remarks>
-   /// <returns></returns>
+    /// <summary>
+    /// Check the pilot input based on <see cref="InputType"/>
+    /// </summary>
+    /// <remarks>
+    /// Override to add new input methods
+    /// </remarks>
+    /// <returns></returns>
     protected virtual PilotInputValues CheckFlightInputs()
     {
 

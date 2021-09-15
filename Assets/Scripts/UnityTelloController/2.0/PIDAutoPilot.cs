@@ -12,7 +12,37 @@ public class PIDAutoPilot : MonoBehaviour, IAutoPilot
         Instant,
     }
 
-    public TranslationStyle translationStyle = TranslationStyle.Linear;
+    public TranslationStyle translationStyle { get; private set; } = TranslationStyle.Linear;
+    /// <summary>
+    /// Update the <see cref="TranslationStyle"/> of the PIDAutoPilot Target
+    /// Will automatically update <see cref="PIDProfile"/> to the approprate Profile for the Mode
+    /// Any custom <see cref="PIDProfile"/> assigned via <see cref="UpdatePIDProfile(PIDProfile)"/> will be overwritten
+    /// </summary>
+    public void SetTransitionSytle(TranslationStyle newStyle)
+    {
+        translationStyle = newStyle;
+
+        switch (translationStyle)
+        {
+            case TranslationStyle.Linear:
+                _currentPIDProfile = _linearPIDProfile;
+                break;
+            case TranslationStyle.NonLinear:
+                _currentPIDProfile = _nonLinearPIDProfile;
+                break;
+            case TranslationStyle.Instant:
+                _currentPIDProfile = _instantPIDProfile;
+                break;
+            default:
+                break;
+        }
+        UpdatePIDProfile(_currentPIDProfile);
+
+        if (currentTargetPoint)
+        {
+            SetNewTarget(currentTargetPoint);
+        }
+    }
 
     private PidController _proximityPIDX;
     private PidController _proximityPIDY;
@@ -20,12 +50,17 @@ public class PIDAutoPilot : MonoBehaviour, IAutoPilot
     private PidController _yawPID;
 
     [SerializeField]
+    private PIDProfile _linearPIDProfile;
+    [SerializeField]
+    private PIDProfile _nonLinearPIDProfile;
+    [SerializeField]
+    private PIDProfile _instantPIDProfile;
+    private PIDProfile _currentPIDProfile;
+
+    [SerializeField]
     private float _linearSpeed = .5f;
     [SerializeField]
     private float _nonLinearSpeed = .5f;
-
-    [SerializeField]
-    private PIDProfile _PIDprofile;
 
     private float _originalDistToTarget;
     private Vector3 _originalQuadPos;
@@ -64,11 +99,12 @@ public class PIDAutoPilot : MonoBehaviour, IAutoPilot
         if (!enabled)
         {
             Debug.Log("AutoPilot Enabled");
+            SetTransitionSytle(translationStyle);
+
             _quadToControl = quadcopter;
             gameObject.SetActive(true);
             MatchQuadTransform();
-
-            UpdatePIDValues(_PIDprofile);
+      
             enabled = true;
         }
     }
@@ -76,13 +112,16 @@ public class PIDAutoPilot : MonoBehaviour, IAutoPilot
     /// Update the PID values for the controller, stored in <see cref="PIDProfile"/>
     /// </summary>
     /// <param name="newPIDprofile">The new profile to use</param>
-    private void UpdatePIDValues(PIDProfile newPIDprofile)
+    public void UpdatePIDProfile(PIDProfile newPIDprofile)
     {
-        //Debug.Log("set pid values to " + newPIDprofile.name);
-        _proximityPIDX = new PidController(newPIDprofile.PIDxP, newPIDprofile.PIDxI, newPIDprofile.PIDxD, 1, -1);
-        _proximityPIDY = new PidController(newPIDprofile.PIDyP, newPIDprofile.PIDyI, newPIDprofile.PIDyD, 1, -1);
-        _proximityPIDZ = new PidController(newPIDprofile.PIDzP, newPIDprofile.PIDzI, newPIDprofile.PIDzD, 1, -1);
-        _yawPID = new PidController(newPIDprofile.yawP, newPIDprofile.yawI, newPIDprofile.yawD, 1, -1);
+        Debug.Log("set pid values to " + newPIDprofile.name);
+
+        _currentPIDProfile = newPIDprofile;
+       
+        _proximityPIDX = new PidController(_currentPIDProfile.PIDxP, _currentPIDProfile.PIDxI, _currentPIDProfile.PIDxD, 1, -1);
+        _proximityPIDY = new PidController(_currentPIDProfile.PIDyP, _currentPIDProfile.PIDyI, _currentPIDProfile.PIDyD, 1, -1);
+        _proximityPIDZ = new PidController(_currentPIDProfile.PIDzP, _currentPIDProfile.PIDzI, _currentPIDProfile.PIDzD, 1, -1);
+        _yawPID = new PidController(_currentPIDProfile.yawP, _currentPIDProfile.yawI, _currentPIDProfile.yawD, 1, -1);
         _proximityPIDX.SetPoint = 0;
         _proximityPIDY.SetPoint = 0;
         _proximityPIDZ.SetPoint = 0;

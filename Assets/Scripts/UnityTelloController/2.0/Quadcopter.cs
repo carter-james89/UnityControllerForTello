@@ -30,6 +30,15 @@ public abstract class Quadcopter : MonoBehaviour, IQuadcopter
         var deltaTime1 = (int)(_timeSinceLastUpdate * 1000);
         telloDeltaTime = new System.TimeSpan(0, 0, 0, 0, (deltaTime1));
 
+        if(_autoPilot != null)
+        {
+            if (_autoPilot.IsActive() && _pilotInputs.UserInputingValues())
+            {
+                Debug.Log("Pilot Input Disabled AutoPilot");
+                _autoPilot.DeactivateAutoPilot();
+            }
+        }
+    
         _pilotInputs.GetFlightCommmands();
 
         currentInputs = _autoPilot.IsActive() ? _autoPilot.Run(telloDeltaTime) : _headLessMode ? ConvertToHeadlessInputs(_pilotInputs.pilotInputValues) : _pilotInputs.pilotInputValues;
