@@ -35,6 +35,8 @@ public interface IQuadcopter
 
     public FlightStatus GetFlightStatus();
 
+    public PilotInputs.PilotInputValues ConvertToHeadlessInputs(PilotInputs.PilotInputValues rawInputs);
+
 
     public void Initialize(PilotInputs pilotInputs, IAutoPilot autoPilot);
 

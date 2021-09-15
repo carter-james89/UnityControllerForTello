@@ -67,7 +67,7 @@ public class TelloProgram : MonoBehaviour
 
     private void Update()
     {
-        if (_autoPilot.currentTargetPoint != _autoPilotTarget)
+        if (_autoPilotTarget && _autoPilot.currentTargetPoint != _autoPilotTarget)
         {
             _autoPilot.SetNewTarget(_autoPilotTarget);
         }

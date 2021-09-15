@@ -9,4 +9,8 @@ public interface IAutoPilot
     public void DeactivateAutoPilot();
 
     public GameObject GetGameObject();
+
+    public PilotInputs.PilotInputValues CalculateInputs(System.TimeSpan deltaTime);
+
+    public bool IsActive();
 }

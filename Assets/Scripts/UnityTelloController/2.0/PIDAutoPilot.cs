@@ -26,6 +26,10 @@ public class PIDAutoPilot : MonoBehaviour, IAutoPilot
     {
         return gameObject;
     }
+    public bool IsActive()
+    {
+        return enabled;
+    }
 
     private void Awake()
     {
@@ -50,7 +54,7 @@ public class PIDAutoPilot : MonoBehaviour, IAutoPilot
     /// <param name="newPIDprofile">The new profile to use</param>
     private void UpdatePIDValues(PIDProfile newPIDprofile)
     {
-        Debug.Log("set pid values to " + newPIDprofile.name);
+        //Debug.Log("set pid values to " + newPIDprofile.name);
         _proximityPIDX = new PidController(newPIDprofile.PIDxP, newPIDprofile.PIDxI, newPIDprofile.PIDxD, 1, -1);
         _proximityPIDY = new PidController(newPIDprofile.PIDyP, newPIDprofile.PIDyI, newPIDprofile.PIDyD, 1, -1);
         _proximityPIDZ = new PidController(newPIDprofile.PIDzP, newPIDprofile.PIDzI, newPIDprofile.PIDzD, 1, -1);
@@ -61,7 +65,7 @@ public class PIDAutoPilot : MonoBehaviour, IAutoPilot
         _yawPID.SetPoint = 0;
     }
 
-    public PilotInputs.PilotInputValues RunAutoPilot(System.TimeSpan deltaTime)
+    public PilotInputs.PilotInputValues CalculateInputs(System.TimeSpan deltaTime)
     {
         PilotInputs.PilotInputValues returnValues = new PilotInputs.PilotInputValues();
         if (currentTargetPoint)
@@ -100,7 +104,7 @@ public class PIDAutoPilot : MonoBehaviour, IAutoPilot
                 returnValues.pitch = (float)trgtPitch;
                 returnValues.roll = (float)trgtRoll;
                 returnValues.throttle = (float)trgtElv;
-                return returnValues;
+                return _quadToControl.ConvertToHeadlessInputs(returnValues);
             }
         }
         returnValues.yaw = 0;
