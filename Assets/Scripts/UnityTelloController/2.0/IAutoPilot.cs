@@ -10,7 +10,7 @@ public interface IAutoPilot
 
     public GameObject GetGameObject();
 
-    public PilotInputs.PilotInputValues CalculateInputs(System.TimeSpan deltaTime);
+    public PilotInputs.PilotInputValues Run(System.TimeSpan deltaTime);
 
     public bool IsActive();
 }

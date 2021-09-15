@@ -32,7 +32,7 @@ public abstract class Quadcopter : MonoBehaviour, IQuadcopter
 
         _pilotInputs.GetFlightCommmands();
 
-        currentInputs = _autoPilot.IsActive() ? _autoPilot.CalculateInputs(telloDeltaTime) : _headLessMode ? ConvertToHeadlessInputs(_pilotInputs.pilotInputValues) : _pilotInputs.pilotInputValues;
+        currentInputs = _autoPilot.IsActive() ? _autoPilot.Run(telloDeltaTime) : _headLessMode ? ConvertToHeadlessInputs(_pilotInputs.pilotInputValues) : _pilotInputs.pilotInputValues;
     }
     /// <summary>
     /// Calculate the Roll and Pitch values to acheive the desired headless direction

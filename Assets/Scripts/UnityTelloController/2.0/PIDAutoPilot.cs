@@ -10,7 +10,16 @@ public class PIDAutoPilot : MonoBehaviour, IAutoPilot
     private PidController _yawPID;
 
     [SerializeField]
+    private float _speed = .5f;
+
+    [SerializeField]
     private PIDProfile _PIDprofile;
+
+    [SerializeField]
+    private bool _linearTranslation;
+
+    private float _originalDistToTarget;
+    private Vector3 _originalQuadPos;
 
     /// <summary>
     /// The current target <see cref="transform"/> is heading towardes 
@@ -43,7 +52,8 @@ public class PIDAutoPilot : MonoBehaviour, IAutoPilot
             Debug.Log("AutoPilot Enabled");
             _quadToControl = quadcopter;
             gameObject.SetActive(true);
-            transform.position = quadcopter.GetGameObject().transform.position;
+            MatchQuadTransform();
+
             UpdatePIDValues(_PIDprofile);
             enabled = true;
         }
@@ -65,17 +75,30 @@ public class PIDAutoPilot : MonoBehaviour, IAutoPilot
         _yawPID.SetPoint = 0;
     }
 
-    public PilotInputs.PilotInputValues CalculateInputs(System.TimeSpan deltaTime)
+
+    /// <summary>
+    /// Calculate the <see cref="PilotInputs.PilotInputValues"/> needed to reach current target
+    /// Values are calculated in global space, so they are converted via <see cref="IQuadcopter.ConvertToHeadlessInputs(PilotInputs.PilotInputValues)"/> before being returned
+    /// </summary>
+    /// <param name="deltaTime"></param>
+    /// <returns>The appropriate Yaw,Pitch,Roll, to achieve the target, in Headless space in regards to <see cref="_quadToControl"/></returns>
+    public PilotInputs.PilotInputValues Run(System.TimeSpan deltaTime)
     {
         PilotInputs.PilotInputValues returnValues = new PilotInputs.PilotInputValues();
         if (currentTargetPoint)
         {
-          
-            //var distCovered = (Time.time - pointAssignedTime) * targetSpeed;
+            if (_linearTranslation)
+            {
+                var currentDist = Vector3.Distance(transform.position, currentTargetPoint.position);
+                var distTraveled = _originalDistToTarget - currentDist;
 
-            // float fracJourney = distCovered / targetDist;
-            // transform.position = Vector3.Lerp(pointAssignedPos, currentTargetPoint.position, fracJourney);
-            transform.position = Vector3.Lerp(transform.position, currentTargetPoint.position, Time.deltaTime * .5f);//, fracJourney);
+                var fractTraveled = distTraveled / _originalDistToTarget;
+                transform.position = Vector3.Lerp(_originalQuadPos, currentTargetPoint.position, fractTraveled + (Time.deltaTime * _speed));
+            }
+            else
+            {
+                transform.position = Vector3.Lerp(transform.position, currentTargetPoint.position, Time.deltaTime * _speed);
+            }
 
 
             var targetOffset = _quadToControl.GetGameObject().transform.position - transform.position;
@@ -114,25 +137,36 @@ public class PIDAutoPilot : MonoBehaviour, IAutoPilot
         return returnValues;
     }
 
-    private float _quadToTargetDist;
-    private Vector3 _onTargetSetQuadPos;
+
 
     public void SetNewTarget(Transform newTarget)
     {
         if (enabled)
         {
             Debug.Log("Set new target point");
+            MatchQuadTransform();
             currentTargetPoint = newTarget;
-            _quadToTargetDist = Vector3.Distance(_quadToControl.GetGameObject().transform.position, currentTargetPoint.position);
-            //pointAssignedEuler = _quadToControl.GetGameObject().transform.eulerAngles;
-            _onTargetSetQuadPos = _quadToControl.GetGameObject().transform.position;
-            //pointAssignedTime = Time.time;
-            transform.eulerAngles = currentTargetPoint.eulerAngles;
+            _originalQuadPos = transform.position;
+            _originalDistToTarget = Vector3.Distance(_originalQuadPos, currentTargetPoint.position);
+            SetAutoPilotRot(currentTargetPoint.rotation);
         }
         else
         {
             Debug.LogWarning("Cannot set autopilot target before autopilot activatd, activate AutoPilot with 'P'");
         }
+    }
+
+    private void MatchQuadTransform()
+    {
+        transform.position = _quadToControl.GetGameObject().transform.position;
+        SetAutoPilotRot(_quadToControl.GetGameObject().transform.rotation);
+    }
+
+    private void SetAutoPilotRot(Quaternion newRot)
+    {
+        var tempEuler = newRot.eulerAngles;
+        tempEuler.x = 0;
+        transform.rotation = Quaternion.Euler(tempEuler);
     }
 
 

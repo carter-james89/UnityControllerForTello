@@ -694,10 +694,6 @@ MonoBehaviour:
   _flightStatus: 0
   _timeSinceLastUpdate: 0
   _headLessMode: 0
-  yaw: 0
-  pitch: 0
-  roll: 0
-  headLessDir: {x: 0, y: 0, z: 0}
   telloVideoTexture: {fileID: 0}
   connectionState: 0
   _telloFrameCount: 0
@@ -731,6 +727,9 @@ MonoBehaviour:
   quatX: 0
   quatY: 0
   quatZ: 0
+  yaw: 0
+  pitch: 0
+  roll: 0
   toEuler: {x: 0, y: 0, z: 0}
 --- !u!1 &310738363
 GameObject:
@@ -2915,7 +2914,7 @@ GameObject:
   - component: {fileID: 1362793618}
   - component: {fileID: 1362793617}
   m_Layer: 0
-  m_Name: Autopilot Quad
+  m_Name: Basic PID Autopilot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2933,7 +2932,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3dcfbdfacebf6a6458abfe35952fa64c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _speed: 0.1
   _PIDprofile: {fileID: 1087489726}
+  _linearTranslation: 1
   _targetPoint: {fileID: 0}
 --- !u!4 &1362793618
 Transform:
@@ -3600,10 +3601,6 @@ MonoBehaviour:
   _flightStatus: 0
   _timeSinceLastUpdate: 0
   _headLessMode: 0
-  yaw: 0
-  pitch: 0
-  roll: 0
-  headLessDir: {x: 0, y: 0, z: 0}
   inputDrag: 1
   drag: 4
   followCam: {fileID: 0}
