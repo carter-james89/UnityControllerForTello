@@ -7,9 +7,51 @@ namespace UnityControllerForTello
 {
     public class SceneManager : SingletonMonoBehaviour<SceneManager>
     {
-        public enum SceneType { FlyOnly, SimOnly }
+        /// <summary>
+        /// Different Scene Modes
+        /// </summary>
+        public enum SceneType {
+            /// <summary>
+            /// Control the Tello
+            /// </summary>
+            FlyOnly, 
+            /// <summary>
+            /// Run the simulator
+            /// </summary>
+            SimOnly 
+        }
+        /// <summary>
+        /// Is the scene configured to control the Tello, or the simulator
+        /// </summary>
         public SceneType sceneType;
-        public enum FlightStatus { PreLaunch, PrimingProps, Launching, Flying, Landing }
+        /// <summary>
+        /// Different status of the quatcopter
+        /// </summary>
+        public enum FlightStatus { 
+            /// <summary>
+            /// Quat is on the landing pad, ready for takeoff
+            /// </summary>
+            PreLaunch, 
+            /// <summary>
+            /// Props are being activated, able to take off manually
+            /// </summary>
+            PrimingProps, 
+            /// <summary>
+            /// Quad has left the ground and is traveling to set height
+            /// Cannont be controlled by User
+            /// </summary>
+            Launching, 
+            /// <summary>
+            /// Quad is in flight mode, can be controlled by user or autopilot
+            /// </summary>
+            Flying, 
+            /// <summary>
+            /// Quad is autonomously landing, cannot be controlled by user
+            /// </summary>
+            Landing }
+        /// <summary>
+        /// The current status of the quad.
+        /// </summary>
         public FlightStatus flightStatus = FlightStatus.PreLaunch;
 
         public Tello.ConnectionState connectionState;
@@ -19,7 +61,13 @@ namespace UnityControllerForTello
         [HideInInspector]
         public Transform activeDrone;
 
-        Camera display2Cam;
+        private Camera display2Cam;
+
+
+        private float timeSinceLastUpdate;
+        private float prevDeltaTime = 0;
+        private System.TimeSpan telloDeltaTime;
+        private float telloFrameCount = 0;
 
         public Quaternion finalInputs { get; private set; }
         public float elv;
@@ -44,20 +92,22 @@ namespace UnityControllerForTello
             if (!telloManager)
                 Debug.LogError("No Tello Manager Found");
 
+            inputController = FindObjectOfType<InputController>();
+
             //so we can roll/pitch tello model without the camera moving on those axis
             var trackingCamObject = transform.Find("Tracking Camera (Display 2)");
             if (trackingCamObject)
                 display2Cam = trackingCamObject.GetComponent<Camera>();
             if (sceneType != SceneType.SimOnly)
             {
-                telloManager.CustomAwake();
+                telloManager.CustomAwake(this,inputController);
                 if (display2Cam)
                     display2Cam.transform.SetParent(telloManager.transform);
             }
             else
                 telloManager.gameObject.SetActive(false);
 
-            inputController = FindObjectOfType<InputController>();
+          
             if (!inputController)
                 Debug.LogError("Missing an input controller");
             else
@@ -86,7 +136,6 @@ namespace UnityControllerForTello
             inputController.CustomStart();
             if (sceneType != SceneType.SimOnly)
             {
-                //  telloManager.CustomStart();
                 telloManager.ConnectToTello();
             }
             if (sceneType != SceneType.FlyOnly)
@@ -104,15 +153,10 @@ namespace UnityControllerForTello
             }
             else if (sceneType == SceneType.FlyOnly)
             {
-
                 telloManager.CheckForUpdate();
             }
         }
 
-        float timeSinceLastUpdate;
-        float prevDeltaTime = 0;
-        System.TimeSpan telloDeltaTime;
-        float telloFrameCount = 0;
         public void RunFrame()
         {
             connectionState = Tello.connectionState;
@@ -159,56 +203,6 @@ namespace UnityControllerForTello
             elv = finalInputs.y;
             roll = finalInputs.z;
             pitch = finalInputs.w;
-
-            //yaw = inputs.x;
-            //elv = inputs.y;
-            //roll = inputs.z;
-            //pitch = inputs.w;
-
-            //switch (sceneType)
-            //{
-            //    case SceneType.FlyOnly:
-            //        telloManager.SendTelloInputs(finalInputs);
-            //        break;
-            //    case SceneType.SimOnly:
-
-            //        break;             
-            //}
-
-            //if()
-
-            //if (Input.GetKeyDown(KeyCode.Q))
-            //{
-            //    inputController.ToggleAutoPilot(!inputController.autoPilotActive);
-            //}
-            //if (Input.GetKeyDown(KeyCode.E))
-            //{
-            //    inputController.BeginFlightPath(FindObjectOfType<FlightPath>());
-            //}
-
-            //if (Tello.connected & sceneType != SceneType.SimOnly)
-            //{
-            //    if (Input.GetKeyDown(KeyCode.T))
-            //    {
-            //        telloManager.OnTakeOff();
-            //    }
-            //    else if (Input.GetKeyDown(KeyCode.V))
-            //    {
-            //        telloManager.StartProps();
-            //    }
-            //    else if (Input.GetKeyDown(KeyCode.L))
-            //    {
-            //        telloManager.OnLand();
-            //    }
-            //    else if (Input.GetKeyDown(KeyCode.Joystick1Button0) || Input.GetKeyDown(KeyCode.Space))
-            //        BeginTracking();
-
-            //    telloManager.CustomUpdate();
-            //}
-            //if (sceneType != SceneType.FlyOnly)
-            //{
-            //    simulator.CustomUpdate();
-            //}
         }
 
         public void TakeOff()
@@ -239,7 +233,6 @@ namespace UnityControllerForTello
         }
         public void ToggleAutoPilot(bool active)
         {
-          //  inputController.headLessMode = active;
             autoPilot.ToggleAutoPilot(active);
         }
         public void SetHomePoint(Vector3 globalPos)
@@ -247,22 +240,8 @@ namespace UnityControllerForTello
             if (autoPilot)
                 autoPilot.SetHomePoint(globalPos);
         }
-        //if fly mode, called from Tello_onUpdate
-        //if sim mode, called from update every couple of seconds.
-        //public void CheckFlightInputs()
-        //{
-        //    inputController.CheckInputs();
-        //}
 
-        //void BeginTracking()
-        //{
-        //    Debug.Log("Begin Tracking");
-        //    telloManager.BeginTracking();
-        //    if (sceneType != SceneType.FlyOnly)
-        //        simulator.ResetSimulator();
-        //}
-
-        Quaternion CalulateFinalInputs(float yaw, float elv, float roll, float pitch)
+        private Quaternion CalulateFinalInputs(float yaw, float elv, float roll, float pitch)
         {
             bool autoPilotActive = false;
             if (autoPilot)

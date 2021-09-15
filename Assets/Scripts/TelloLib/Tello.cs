@@ -6,6 +6,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+/// <summary>
+/// https://github.com/Kragrathea/TelloLib
+/// </summary>
 namespace TelloLib
 {
     public class Tello

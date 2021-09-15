@@ -49,14 +49,13 @@ namespace UnityControllerForTello
                 sceneManager.Land();
             }
         }
-        public Quaternion CheckFlightInputs()
-        {          
-            //timeSinceLastUpdate = Time.time - prevDeltaTime;
-            //prevDeltaTime = Time.time;
-            //deltaTime1 = (int)(timeSinceLastUpdate * 1000);
 
-            //  Debug.Log(timeSinceLastUpdate * 1000);
-            // Debug.Log("check inputs");           
+        /// <summary>
+        /// Get the inputs based on <see cref="InputType"/>
+        /// </summary>
+        /// <returns></returns>
+        public Quaternion CheckFlightInputs()
+        {                 
             float lx = 0f;
             float ly = 0f;
             float rx = 0f;
@@ -116,62 +115,7 @@ namespace UnityControllerForTello
             rawRoll = rx;
             rawPitch = ry;
             // return new Quaternion(lx, ly, rx, ry);
-            return new Quaternion(rawYaw, rawElv, rawRoll, rawPitch);
-
-            //if (autoPilotTarget & autoPilotActive)
-            //{
-            //    //if any update is received from pilot, deactivate autopilot
-            //    if (ly != 0 || rx != 0 || ry != 0)
-            //    {
-            //        autoPilotActive = false;
-            //    }
-            //    else
-            //    {
-            //        RunAutoPilot(lx);
-            //        var distFromTarget = Vector3.Distance(targetDrone.position, autoPilotTarget.position);
-            //        atTarget = false;
-            //        //Debug.Log(distFromTarget +" from target");
-            //        if (distFromTarget < .2f)
-            //        {
-            //            atTarget = true;
-            //            if (currentFlightPath)
-            //            {
-            //                ReachedPathPoint();
-            //            }
-            //        }
-            //    }
-            //}
-            //else
-            //{
-            //    SetControllerState(lx, ly, rx, ry);
-            //}
-
-            //if (inputType == InputType.ThrustmasterThrottle)
-            //    CheckForFlip(flipDir, flipDirX);           
+            return new Quaternion(rawYaw, rawElv, rawRoll, rawPitch);        
         }
-        // public bool atTarget { get; private set; }
-        //   FlightPath currentFlightPath;
-        //public void BeginFlightPath(FlightPath pathToFly)
-        //{
-        //    Debug.Log("Begin Flight Path");
-        //    currentFlightPath = pathToFly;
-        //    autoPilotTarget = currentFlightPath.flightPoints[0];
-        //}
-        //void ReachedPathPoint()
-        //{
-        //    Debug.Log("Find next flight point");
-        //    int nextTarget = 0;
-        //    for (int i = 0; i < currentFlightPath.flightPoints.Count; i++)
-        //    {
-        //        if (autoPilotTarget == currentFlightPath.flightPoints[i])
-        //        {
-        //            if (i != currentFlightPath.flightPoints.Count - 1)
-        //                nextTarget = i + 1;
-
-        //            autoPilotTarget = currentFlightPath.flightPoints[nextTarget];
-        //            break;
-        //        }
-        //    }
-        //}
     }
 }

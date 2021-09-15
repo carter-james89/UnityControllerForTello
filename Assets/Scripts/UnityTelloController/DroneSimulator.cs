@@ -4,14 +4,19 @@ using UnityEngine;
 
 namespace UnityControllerForTello
 {
+    /// <summary>
+    /// The controller for the simulated drone which is active in <see cref="SceneManager.sceneType"/>
+    /// Lives on the "Drone Simulator" GameObject
+    /// </summary>
     public class DroneSimulator : MonoBehaviour
     {
-        Rigidbody rigidBody;
-        InputController inputController;
+        private Rigidbody rigidBody;
+        private InputController inputController;
         public float inputDrag, drag;
         public Camera followCam;
-        SceneManager sceneManager;
-        // Use this for initialization
+        private SceneManager sceneManager;
+        
+
         public void CustomStart(SceneManager sceneManager)
         {
             this.sceneManager = sceneManager;
@@ -19,12 +24,10 @@ namespace UnityControllerForTello
             inputController = sceneManager.inputController;
         }
 
-        // Update is called once per frame
         public void CustomUpdate()
         {
             if (Input.GetKeyDown(KeyCode.Joystick1Button1))
             {
-                // Debug.Log("Button 1");
                 ResetSimulator();
             }
         }
@@ -81,11 +84,6 @@ namespace UnityControllerForTello
                 }
 
             }
-
-            //float yVel = rigidBody.velocity.y + Physics.gravity.y;
-
-            //Howering
-            // rigidBody.AddForce(0, -yVel * Time.deltaTime, 0, ForceMode.Acceleration);
         }
 
         public void ResetSimulator()
@@ -96,5 +94,4 @@ namespace UnityControllerForTello
 
         }
     }
-
 }

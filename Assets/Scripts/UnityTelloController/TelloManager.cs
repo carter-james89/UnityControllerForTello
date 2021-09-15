@@ -1,15 +1,17 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using TelloLib;
 
 namespace UnityControllerForTello
 {
+    /// <summary>
+    /// Displays information about the quadcopter from <see cref="TelloLib"/> library
+    /// Takes inputs to send to the quadcopter
+    /// </summary>
     public class TelloManager : MonoBehaviour
     {
-      
-
-        public bool drawFlightPath = true, limitPathDistance = false;
+        public bool drawFlightPath = true;
+        public bool limitPathDistance = false;
         private TelloVideoTexture telloVideoTexture;
         public float yaw, pitch, roll;
 
@@ -23,14 +25,12 @@ namespace UnityControllerForTello
 
         public bool flying = false, hovering = false;
 
-        List<FlightPoint> flightPoints;
-        //float trackingOffsetX, trackingOffsetY, trackingOffsetZ;
-        float prevPosX, prevPosY, prevPosZ;
-        Transform ground, telloGround, telloModel, flightPointsParent;
+        private List<FlightPoint> flightPoints;
+        private float prevPosX, prevPosY, prevPosZ;
+        private Transform ground, telloGround, telloModel, flightPointsParent;
         public bool tracking { get; private set; } = false;
-        bool firstTrackinFrame = true;
-        Vector3 originPoint, originEuler;
-        bool updateReceived = false;
+        private Vector3 originPoint, originEuler;
+        private bool updateReceived = false;
 
         //Tello api
         public float posUncertainty;
@@ -56,37 +56,37 @@ namespace UnityControllerForTello
         public int wifiStrength;
         public bool windState;
 
-        bool startingProps = false;
-        int startUpCount = 0, startUpLimit = 300;
-
-        //     public delegate void EventDelegate();
+        private bool startingProps = false;
+        private int startUpCount = 0, startUpLimit = 300;
 
         public SceneManager sceneManager;
-        InputController inputController;
+        private InputController inputController;
 
         public int telloFrameCount = 0;
-        public void CustomAwake()
+        public void CustomAwake(SceneManager sceneManager, InputController inputController)
         {
-            sceneManager = FindObjectOfType<SceneManager>();
-            inputController = FindObjectOfType<InputController>();
+            this.sceneManager = sceneManager;
+            this.inputController = inputController;
             try
             {
                 telloModel = transform.Find("Tello Model");
                 ground = transform.Find("Ground");
                 telloGround = transform.Find("Tello Ground");
                 flightPointsParent = GameObject.Find("Track Points").transform;
-                //telloHeight = GameObject.Find("tello (Height)").transform;
             }
             catch
             {
                 Debug.Log("Missing a gameObject");
             }
-            
 
             if (telloVideoTexture == null)
                 telloVideoTexture = FindObjectOfType<TelloVideoTexture>();
         }
 
+        /// <summary>
+        /// Attempt to connect to the quadcopter via <see cref="Tello"/>
+        /// Must be connected to quadcopter via wifi
+        /// </summary>
         public void ConnectToTello()
         {
             Tello.onConnection += Tello_onConnection;
@@ -95,10 +95,13 @@ namespace UnityControllerForTello
             Tello.startConnecting();
         }
 
-        //This is called when you press 'T'
+        /// <summary>
+        /// Send command to quadcopter to take off and elevate to quads predetermined height
+        /// Cannot control the drone durring until <see cref="SceneManager.FlightStatus.Flying"/>
+        /// </summary>
         public void AutoTakeOff()
         {
-            Debug.Log("TakeOff!"); 
+            Debug.Log("TakeOff!");
             var preFlightPanel = GameObject.Find("Pre Flight Panel");
             if (preFlightPanel)
                 preFlightPanel.SetActive(false);
@@ -122,7 +125,7 @@ namespace UnityControllerForTello
             if (preFlightPanel)
                 preFlightPanel.SetActive(false);
             sceneManager.flightStatus = SceneManager.FlightStatus.Launching;
-            UnityEngine.Debug.Log("props started");
+            Debug.Log("props started");
         }
 
         public void OnLand()
@@ -134,7 +137,6 @@ namespace UnityControllerForTello
             CreateFlightPoint();
         }
 
-        //called from scene manager
         public void CheckForUpdate()
         {
             if (updateReceived)
@@ -154,16 +156,13 @@ namespace UnityControllerForTello
             }
         }
 
-        bool localOnGround = true;
-
         Vector3 GetCurrentPos()
         {
             var telloPosY = posY - originPoint.y;
             var telloPosX = posX - originPoint.x;
             var telloPosZ = posZ - originPoint.z;
 
-            return new Vector3(telloPosX, telloPosY, telloPosZ);
-            // Vector3 dif = flightPoints[flightPoints.Count - 1].transform.position - currentPos;       
+            return new Vector3(telloPosX, telloPosY, telloPosZ);     
         }
 
         public void CheckForLaunchComplete()
@@ -216,10 +215,7 @@ namespace UnityControllerForTello
             {
                 Debug.Log("Tracking lost " + telloFrameCount);
                 validTrackingFrame = false;
-                // PlaceGameObject("Pre Offset " + telloFrameCount);
-                // transform.position += prevDeltaPos;
-                // PlaceGameObject("Post Offset " + telloFrameCount);
-            }  
+            }
             return validTrackingFrame;
         }
 
@@ -227,7 +223,7 @@ namespace UnityControllerForTello
         Vector3 prevDeltaPos;
 
         float elevationOffset;
-      
+
         /// <summary>
         /// Create a point for tracking
         /// </summary>
@@ -249,12 +245,8 @@ namespace UnityControllerForTello
             if (newState == Tello.ConnectionState.Connected)
             {
                 Debug.Log("Connected to Tello, please wait for camera feed");
-                // Tello.queryAttAngle();
-               // Tello.setMaxHeight(50);
-
                 Tello.setPicVidMode(1); // 0: picture, 1: video
                 Tello.setVideoBitRate((int)TelloController.VideoBitRate.VideoBitRateAuto);
-                //Tello.setEV(0);
                 Tello.requestIframe();
             }
         }

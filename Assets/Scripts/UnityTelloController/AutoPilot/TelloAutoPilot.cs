@@ -1,23 +1,44 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace UnityControllerForTello
 {
+    /// <summary>
+    /// The autonomous flight controller which controlls <see cref="TelloManager"/>
+    /// </summary>
     public class TelloAutoPilot : MonoBehaviour
     {
-        Transform targetDrone;
-        PidController proximityPIDX, proximityPIDY, proximityPIDZ, yawPID;
+        private SceneManager sceneManager;
+
+        /// <summary>
+        /// The target the Tello will be attempting to match
+        /// </summary>
+        private Transform targetDrone;
+        private PidController proximityPIDX;
+        private PidController proximityPIDY;
+        private PidController proximityPIDZ;
+        private PidController yawPID;
+
+        /// <summary>
+        /// The PID Profile to use for the PID Controllers
+        /// </summary>
         public PIDProfile PIDprofile;
-        SceneManager sceneManager;
+
         public Transform targetPoint;
-        Transform currentTargetPoint;
 
-        Transform homePoint;
+        /// <summary>
+        /// The current target <see cref="targetDrone"/> is heading towardes 
+        /// </summary>
+        private Transform currentTargetPoint;
 
-        Vector3 pointAssignedEuler, pointAssignedPos;
-        float pointAssignedTime;
-        float targetDist;
+
+        /// <summary>
+        /// The designated home point, set via <see cref="SetHomePoint(Vector3)"/>
+        /// </summary>
+        private Transform homePoint;
+
+        private Vector3 pointAssignedEuler, pointAssignedPos;
+        private float pointAssignedTime;
+        private float targetDist;
         public float targetSpeed;
 
         private void Awake()
@@ -38,11 +59,11 @@ namespace UnityControllerForTello
 
         public Quaternion RunAutoPilot(System.TimeSpan deltaTime)
         {
-            if(currentTargetPoint != targetPoint)
+            if (currentTargetPoint != targetPoint)
             {
                 Debug.Log("Set new target point");
                 currentTargetPoint = targetPoint;
-                targetDist = Vector3.Distance(sceneManager.activeDrone.position,currentTargetPoint.position);
+                targetDist = Vector3.Distance(sceneManager.activeDrone.position, currentTargetPoint.position);
                 pointAssignedEuler = sceneManager.activeDrone.eulerAngles;
                 pointAssignedPos = sceneManager.activeDrone.position;
                 pointAssignedTime = Time.time;
@@ -51,40 +72,23 @@ namespace UnityControllerForTello
             if (currentTargetPoint)
             {
                 var distCovered = (Time.time - pointAssignedTime) * targetSpeed;
+
                 float fracJourney = distCovered / targetDist;
                 targetDrone.position = Vector3.Lerp(pointAssignedPos, currentTargetPoint.position, fracJourney);
-               // targetDrone.eulerAngles = Vector3.Lerp(pointAssignedEuler, currentTargetPoint.eulerAngles, fracJourney);
+                // targetDrone.position = Vector3.Lerp(targetDrone.position, currentTargetPoint.position, Time.deltaTime * .5f);//, fracJourney);
             }
-            //  Debug.Log("Run autopilot with time " + prevDeltaTime);
 
-
-           
             var targetOffset = sceneManager.activeDrone.position - targetDrone.position;
 
             if (targetOffset.magnitude > .1f || sceneManager.sceneType == SceneManager.SceneType.SimOnly)
             {
-                // offsetFromTarget = targetOffset;
-
                 proximityPIDX.ProcessVariable = targetOffset.x;
                 double trgtRoll = proximityPIDX.ControlVariable(deltaTime);
-                //if(double.IsNaN(trgtRoll))
-                //{
-                //    trgtRoll = 0;
-                //}
 
                 proximityPIDY.ProcessVariable = targetOffset.y;
                 double trgtElv = proximityPIDY.ControlVariable(deltaTime);
-                //if(double.IsNaN(trgtElv))
-                //{
-                //    trgtElv = 0;
-                //}
-
                 proximityPIDZ.ProcessVariable = targetOffset.z;
                 double trgtPitch = proximityPIDZ.ControlVariable(deltaTime);
-                //if(double.IsNaN(trgtPitch))
-                //{
-                //    trgtPitch = 0;
-                //}
 
                 var yawError = sceneManager.activeDrone.eulerAngles.y - targetDrone.eulerAngles.y;
 
@@ -93,18 +97,19 @@ namespace UnityControllerForTello
                 else if (yawError > 180)
                     yawError = -(360 - yawError);
 
-                //yawError = Quaternion.eulerAngles(yawErrorRot).y;
-                // yawError = Vector3.Angle(targetDrone.forward, autoPilotTarget.forward);
                 yawPID.ProcessVariable = yawError;
                 double trgtYaw = yawPID.ControlVariable(deltaTime);
                 return new Quaternion((float)trgtYaw, (float)trgtElv, (float)trgtRoll, (float)trgtPitch);
             }
             else
                 return new Quaternion(0, 0, 0, 0);
-          
-
-            
         }
+
+        /// <summary>
+        /// Enable or disable the Autopilot
+        /// Autopilot will be auto disabled whenever user input is detected
+        /// </summary>
+        /// <param name="active">true or false</param>
         public void ToggleAutoPilot(bool active)
         {
             if (active)
@@ -116,7 +121,7 @@ namespace UnityControllerForTello
                 ToggleAutoPilotOff();
             }
         }
-        void ToggleAutoPilotOn()
+        private void ToggleAutoPilotOn()
         {
             if (!enabled)
             {
@@ -127,7 +132,7 @@ namespace UnityControllerForTello
                 enabled = true;
             }
         }
-        void ToggleAutoPilotOff()
+        private void ToggleAutoPilotOff()
         {
             if (enabled)
             {
@@ -136,7 +141,12 @@ namespace UnityControllerForTello
                 enabled = false;
             }
         }
-        void UpdatePIDValues(PIDProfile newPIDprofile)
+
+        /// <summary>
+        /// Update the PID values for the controller, stored in <see cref="PIDProfile"/>
+        /// </summary>
+        /// <param name="newPIDprofile">The new profile to use</param>
+        private void UpdatePIDValues(PIDProfile newPIDprofile)
         {
             Debug.Log("set pid values to " + newPIDprofile.name);
             proximityPIDX = new PidController(newPIDprofile.PIDxP, newPIDprofile.PIDxI, newPIDprofile.PIDxD, 1, -1);
@@ -149,5 +159,4 @@ namespace UnityControllerForTello
             yawPID.SetPoint = 0;
         }
     }
-
 }
