@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TelloLib;
@@ -6,9 +7,13 @@ using UnityEngine;
 public class TelloQuadcopter : Quadcopter
 {
     [SerializeField]
-    private TelloVideoTexture telloVideoTexture;
+    private TelloVideoFeed _videoFeed;
 
-    private IQuadcopter.FlightStatus flightStatus;
+
+    /// <summary>
+    /// The last frame recieved updated via <see cref="Tello_onUpdate(int)"/>
+    /// </summary>
+    private int _lastTelloUpdateFrame;
 
     private bool validTrackingFrame;
 
@@ -30,7 +35,7 @@ public class TelloQuadcopter : Quadcopter
 
     public override void Initialize(PilotInputs pilotInputs, IAutoPilot autoPilot)
     {
-        base.Initialize(pilotInputs,autoPilot);
+        base.Initialize(pilotInputs, autoPilot);
         ConnectToTello();
     }
 
@@ -42,7 +47,15 @@ public class TelloQuadcopter : Quadcopter
     {
         Tello.onConnection += Tello_onConnection;
         Tello.onUpdate += Tello_onUpdate;
-        Tello.onVideoData += Tello_onVideoData;
+        if (_videoFeed)
+        {
+            _videoFeed.InitializeFeed(this);
+        }
+        else
+        {
+            Debug.LogWarning("No TelloVideoFeed supplied in inspector, will not display video feed from Tello");
+        }
+
         Tello.startConnecting();
     }
 
@@ -64,53 +77,97 @@ public class TelloQuadcopter : Quadcopter
         //Frame info
 
 
-        SyncDataWithTello();
 
-        switch (flightStatus)
-        {
-            case IQuadcopter.FlightStatus.Launching:
-                CheckForLaunchComplete();
-                break;
-            case IQuadcopter.FlightStatus.Flying:
-                bool validFrame = SetTelloPosition();
-                if (!validFrame & _autoPilot.IsActive())
-                {
-                    Debug.Log("AutoPilot disabled because Tello Lost Tracking");
-                    _autoPilot.DeactivateAutoPilot();
-                }
-                break;
-        }
+        //switch (_flightStatus)
+        //{
+        //    case IQuadcopter.FlightStatus.Launching:
+        //        CheckForLaunchComplete();
+        //        break;
+        //    case IQuadcopter.FlightStatus.Flying:
+        //        Debug.Log("switch flying");
+        //        bool validFrame = SetTelloPosition();
+        //        if (!validFrame & _autoPilot.IsActive())
+        //        {
+        //            Debug.Log("AutoPilot disabled because Tello Lost Tracking");
+        //            _autoPilot.DeactivateAutoPilot();
+        //        }
+        //        break;
+        //}
         //inputs
-        UpdateQuadcopter();
+        _lastTelloUpdateFrame = Time.frameCount;
     }
+
+    private void Update()
+    {
+        if (_lastTelloUpdateFrame != Time.frameCount)
+        {
+            SyncDataWithTello();
+            switch (_flightStatus)
+            {
+                case IQuadcopter.FlightStatus.Launching:
+                    CheckForLaunchComplete();
+                    break;
+                case IQuadcopter.FlightStatus.Flying:
+                    bool validFrame = false;
+                    try
+                    {
+                        validFrame = SetTelloPosition();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.Log(e + " : emergency land");
+                    }
+                    if (!validFrame & _autoPilot.IsActive())
+                    {
+                        Debug.Log("AutoPilot disabled because Tello Lost Tracking");
+                        _autoPilot.DeactivateAutoPilot();
+                    }
+                    break;
+            }
+            UpdateQuadcopter(); //need to run in update to get Input Values for this frame
+            SendTelloInputs();
+        }
+
+    }
+    public void SendTelloInputs()
+    {
+        if (_flightStatus != IQuadcopter.FlightStatus.PreLaunch)
+        {
+            Tello.controllerState.setAxis(currentInputs.yaw, currentInputs.throttle, currentInputs.roll, currentInputs.pitch);
+        }
+    }
+
+    private Vector3 originPoint;
+    private Vector3 originEuler;
 
     public void CheckForLaunchComplete()
     {
-        //if (flymode == 6)
-        //{
-        //    originPoint = GetCurrentPos();
-        //   // Debug.Log("Y Offset " + originPoint + " tello frame count " + telloFrameCount);
-        //    originEuler = new Vector3(pitch, yaw, roll);
-        //    // onTrackStartRot = new Quaternion(quatW, quatX, quatY, quatZ);
-        //    ground.position -= new Vector3(0, height * .1f, 0);
-        //    flightPoints = new List<FlightPoint>();
-        //    CreateFlightPoint();
+        if (flymode == 6 && flying)
+        {
+            Debug.Log("launch complete");
+            // originPoint = GetCurrentPos();
+            originPoint = new Vector3(posX, posY, posZ);
+            // Debug.Log("Y Offset " + originPoint + " tello frame count " + telloFrameCount);
+            originEuler = new Vector3(pitch, yaw, roll);
 
-        //    //Debug.Log("tello height set to " + height * .1f);
-        //    telloGround.position = transform.position - new Vector3(0, height * .1f, 0);
-        //    elevationOffset = height * .1f;
-        //    sceneManager.SetHomePoint(new Vector3(0, height * .1f, 0));
-        //    flightStatus = IQuadcopter.FlightStatus.Flying;
-        //}
+            // ground.position -= new Vector3(0, height * .1f, 0);
+            //// flightPoints = new List<FlightPoint>();
+            // CreateFlightPoint();
+
+            //Debug.Log("tello height set to " + height * .1f);
+            //telloGround.position = transform.position - new Vector3(0, height * .1f, 0);
+            elevationOffset = height * .1f;
+            // sceneManager.SetHomePoint(new Vector3(0, height * .1f, 0));
+            _flightStatus = IQuadcopter.FlightStatus.Flying;
+        }
     }
     private Vector3 GetCurrentPos()
     {
-        //var telloPosY = posY - originPoint.y;
-        //var telloPosX = posX - originPoint.x;
-        //var telloPosZ = posZ - originPoint.z;
+        var telloPosY = posY - originPoint.y;
+        var telloPosX = posX - originPoint.x;
+        var telloPosZ = posZ - originPoint.z;
 
-        //return new Vector3(telloPosX, telloPosY, telloPosZ);
-        return Vector3.zero;
+        return new Vector3(telloPosX, telloPosY, telloPosZ);
     }
 
     public void SyncDataWithTello()
@@ -126,6 +183,7 @@ public class TelloQuadcopter : Quadcopter
         quatX = state.quatW;
         quatY = state.quatW;
         quatZ = state.quatW;
+
 
         var eulerInfo = state.toEuler();
 
@@ -157,7 +215,13 @@ public class TelloQuadcopter : Quadcopter
         wifiDisturb = state.wifiDisturb;
         wifiStrength = state.wifiStrength;
         windState = state.windState;
+        flying = state.flying;
+
+        hover = state.droneHover;
     }
+
+    public bool flying;
+    public bool hover;
 
     public bool SetTelloPosition()
     {
@@ -171,19 +235,20 @@ public class TelloQuadcopter : Quadcopter
         //valid tello frame
         if (Mathf.Abs(xDif) < 2 & Mathf.Abs(yDif) < 2 & Mathf.Abs(zDif) < 2)
         {
+
             transform.position = currentPos;
             transform.position += new Vector3(0, elevationOffset, 0);
             prevDeltaPos = dif;
-            Vector3 flightPointDif = flightPoints[flightPoints.Count - 1].transform.position - currentPos;
-            if (flightPointDif.magnitude > .001f)
-            {
-                CreateFlightPoint();
-            }
+            // Vector3 flightPointDif = flightPoints[flightPoints.Count - 1].transform.position - currentPos;
+            //if (flightPointDif.magnitude > .001f)
+            //{
+            //    //  CreateFlightPoint();
+            //}
             yaw = yaw * (180 / Mathf.PI);
-            transform.eulerAngles = new Vector3(0, yaw, 0);
-            pitch = pitch * (180 / Mathf.PI);
+            //transform.eulerAngles = new Vector3(0, yaw, 0);
+            pitch = (pitch * (180 / Mathf.PI));
             roll = roll * (180 / Mathf.PI);
-            transform.localEulerAngles = new Vector3(pitch - 90, 0, roll);
+            transform.localEulerAngles = new Vector3(-pitch, yaw, roll);
         }
         else
         {
@@ -193,25 +258,8 @@ public class TelloQuadcopter : Quadcopter
         return validTrackingFrame;
     }
 
-    private void Tello_onVideoData(byte[] data)
-    {
-        if (telloVideoTexture != null)
-        {
-            telloVideoTexture.PutVideoData(data);
-        }
-        else
-        {
-            Debug.LogWarning("Recieving video, but telloVideoTexture is null, assign in inspector");
-        }
-    }
-    public override void Land()
-    {
-        //var preFlightPanel = GameObject.Find("Pre Flight Panel");
-        //if (preFlightPanel)
-        //    preFlightPanel.SetActive(false);
-        Tello.takeOff();
-        flightStatus = IQuadcopter.FlightStatus.Launching;
-    }
+
+
 
     private void CreateFlightPoint()
     {
@@ -229,14 +277,45 @@ public class TelloQuadcopter : Quadcopter
 
     public override void TakeOff()
     {
-        throw new System.NotImplementedException();
+        if (connectionState == Tello.ConnectionState.Connected)
+        {
+            Debug.Log("TakeOff");
+            Tello.takeOff();
+            _flightStatus = IQuadcopter.FlightStatus.Launching;
+        }
+        else
+        {
+            Debug.LogWarning("Not connected to tello prior to takeoff command : " + connectionState);
+        }
     }
+    public override void Land()
+    {
 
+        if (connectionState == Tello.ConnectionState.Connected)
+        {
+            Debug.Log("Land");
+            Tello.land();
+            transform.position = new Vector3(transform.position.x, 0, transform.position.z);
+            // CreateFlightPoint();
+            _flightStatus = IQuadcopter.FlightStatus.Landing;
+        }
+        else
+        {
+            Debug.LogWarning("Not connected to Tello at time of land command : " + connectionState);
+        }
+    }
 
 
     public override bool IsSimulator()
     {
         return false;
+    }
+
+    protected override void OnDestroy()
+    {
+        base.OnDestroy();
+        Tello.onConnection -= Tello_onConnection;
+        Tello.onUpdate -= Tello_onUpdate;
     }
 
     //Tello api

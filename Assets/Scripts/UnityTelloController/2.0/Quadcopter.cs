@@ -119,7 +119,16 @@ public abstract class Quadcopter : MonoBehaviour, IQuadcopter
         return gameObject;
     }
 
-
+    protected virtual void OnDestroy()
+    {
+        if (_pilotInputs)
+        {
+            _pilotInputs.takeOff -= TakeOff;
+            _pilotInputs.land -= Land;
+            _pilotInputs.toggleAutoPilot -= ToggleAutoPilot;
+        }
+      
+    }
 
     public IQuadcopter.FlightStatus GetFlightStatus()
     {

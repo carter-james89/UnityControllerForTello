@@ -55,15 +55,16 @@ public class PilotInputs : MonoBehaviour
         }
         if (Input.GetKeyDown(KeyCode.T))
         {
-            takeOff.Invoke();
+            Debug.Log("takeoff at pilotinput");
+            takeOff?.Invoke();
         }
         else if (Input.GetKeyDown(KeyCode.V))
         {
-            primeProps.Invoke();
+            primeProps?.Invoke();
         }
         else if (Input.GetKeyDown(KeyCode.L))
         {
-            land.Invoke();
+            land?.Invoke();
         }
     }
 
