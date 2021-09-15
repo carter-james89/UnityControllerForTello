@@ -1,20 +1,52 @@
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using UnityEngine;
 
+
+/// <summary>
+/// Base class for standard quadcopters
+/// Satisfies the requirements of <see cref="IQuadcopter"/>, and handles most of the heavy lifting for basic functions
+/// </summary>
 public abstract class Quadcopter : MonoBehaviour, IQuadcopter
 {
+    /// <summary>
+    /// The source of Inputs from pilot, supplied in <see cref="Initialize(PilotInputs, IAutoPilot)"/>
+    /// </summary>
     protected PilotInputs _pilotInputs;
+    /// <summary>
+    /// The AutoPilot modeule to use, supplied in <see cref="Initialize(PilotInputs, IAutoPilot)"/>
+    /// </summary>
     protected IAutoPilot _autoPilot;
 
     [SerializeField]
+    protected TrailVisualizer _trailVisualizer;
+
+    /// <summary>
+    /// The current status of the quadcopter
+    /// </summary>
+    [SerializeField]
     protected IQuadcopter.FlightStatus _flightStatus;
 
+    /// <summary>
+    /// How long has it been since the last Update, required for <see cref="PidController"/>
+    /// </summary>
+    /// <remarks>
+    /// Exposed in Inspector solely for debuging
+    /// </remarks>
     [SerializeField]
     private float _timeSinceLastUpdate;
+    /// <summary>
+    /// The time of the last update
+    /// </summary>
     private float prevDeltaTime = 0;
+    /// <summary>
+    /// <see cref="prevDeltaTime"/> converted into <see cref="System.TimeSpan"/>
+    /// </summary>
     private System.TimeSpan telloDeltaTime;
 
+    /// <summary>
+    /// Should the Quad run in headless mode?
+    /// Yaw of the craft is ignored, in the case of <see cref="TelloQuadcopter"/>, forward is the direction the Tello was facing when powered on
+    /// </summary>
     [SerializeField]
     private bool _headLessMode = false;
 
@@ -22,6 +54,22 @@ public abstract class Quadcopter : MonoBehaviour, IQuadcopter
     public abstract void Land();
     public abstract bool IsSimulator();
 
+    /// <summary>
+    /// Event that is called whenever the GameObjects <see cref="Transform"/> is changed
+    /// </summary>
+    /// <remarks>
+    /// This needs to be called manually in <see cref="onTransformChanged"/> for all inherited classes
+    /// </remarks>
+    public Action<Vector3,Quaternion> onTransformChanged;
+
+    /// <summary>
+    /// The point the Quad took off from, can be updated on the fly
+    /// </summary>
+    public Vector3 homePoint { get; private set; }
+
+    /// <summary>
+    /// The updates supplied by either the Pilot or the AutoPilot for this frame
+    /// </summary>
     protected PilotInputs.PilotInputValues currentInputs;
     protected void UpdateQuadcopter()
     {
@@ -90,6 +138,11 @@ public abstract class Quadcopter : MonoBehaviour, IQuadcopter
         _pilotInputs = pilotInputs;
         _autoPilot = autoPilot;
 
+        if (_trailVisualizer)
+        {
+            _trailVisualizer.Initialize(this);
+        }
+
         _pilotInputs.takeOff += TakeOff;
         _pilotInputs.land += Land;
         _pilotInputs.toggleAutoPilot += ToggleAutoPilot;
@@ -126,8 +179,12 @@ public abstract class Quadcopter : MonoBehaviour, IQuadcopter
             _pilotInputs.takeOff -= TakeOff;
             _pilotInputs.land -= Land;
             _pilotInputs.toggleAutoPilot -= ToggleAutoPilot;
-        }
-      
+        }     
+    }
+
+    protected void OnTransformUpdated()
+    {
+        onTransformChanged?.Invoke(transform.position, transform.rotation);
     }
 
     public IQuadcopter.FlightStatus GetFlightStatus()
@@ -135,4 +192,8 @@ public abstract class Quadcopter : MonoBehaviour, IQuadcopter
         return _flightStatus;
     }
 
+    public void SetHomePoint(Vector3 newHomePoint)
+    {
+        homePoint = newHomePoint;
+    }
 }

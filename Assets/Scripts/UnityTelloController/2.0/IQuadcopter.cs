@@ -29,6 +29,8 @@ public interface IQuadcopter
         Landing
     }
 
+    public void SetHomePoint(Vector3 newHomePoint);
+
     public GameObject GetGameObject();
 
     public bool IsSimulator();

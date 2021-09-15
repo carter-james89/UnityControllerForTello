@@ -2,13 +2,20 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// A simulator Quadcopter meant to replicate the DJI Tello
+/// Can be used to test <see cref="IAutoPilot"/> or any new features without destroying Tello
+/// </summary>
+///     /// <remarks>
+/// Tried my best to tune the simulator to match real life Tello, but dont expect PID tunings for simulator to work for Tello
+/// </remarks>
 public class SimulationQuadcopter : Quadcopter
 {
     private Rigidbody rigidBody;
     [SerializeField]
     private float inputDrag;
     [SerializeField]
-    private float  drag;
+    private float drag;
     public Camera followCam;
 
     public override void Initialize(PilotInputs pilotInputs, IAutoPilot autoPilot)
@@ -22,6 +29,12 @@ public class SimulationQuadcopter : Quadcopter
         UpdateQuadcopter();
     }
 
+    /// <summary>
+    /// All the physics for the simulator
+    /// </summary>
+    /// <remarks>
+    /// Tried my best to tune the simulator to match real life Tello, but dont expect PID tunings for simulator to work for Tello
+    /// </remarks>
     public void FixedUpdate()
     {
         if (_flightStatus != IQuadcopter.FlightStatus.PreLaunch)
@@ -65,13 +78,15 @@ public class SimulationQuadcopter : Quadcopter
             {
                 rigidBody.drag = drag;
                 rigidBody.angularDrag = drag * .9f;
-            } 
+            }
+
+            OnTransformUpdated();
         }
     }
 
     public void ResetSimulator()
     {
-       // transform.position = sceneManager.telloManager.transform.position;
+        // transform.position = sceneManager.telloManager.transform.position;
         rigidBody.velocity = Vector3.zero;
         rigidBody.angularVelocity = Vector3.zero;
 
@@ -79,7 +94,7 @@ public class SimulationQuadcopter : Quadcopter
 
     public override void Land()
     {
-        throw new System.NotImplementedException();
+
     }
 
     public override void TakeOff()
@@ -87,7 +102,7 @@ public class SimulationQuadcopter : Quadcopter
         Debug.Log("Simulator TakeOff");
         transform.position += new Vector3(0, .8f, 0);
         gameObject.GetComponent<Rigidbody>().useGravity = true;
-       // sceneManager.SetHomePoint(transform.position);
+        SetHomePoint(transform.position);
         _flightStatus = IQuadcopter.FlightStatus.Flying;
     }
 
