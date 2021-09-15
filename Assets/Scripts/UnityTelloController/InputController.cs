@@ -110,11 +110,12 @@ namespace UnityControllerForTello
             if (inputType != InputType.ThrustmasterThrottle)
                 speed = 1;
 
+            ///simply to show debug values in inspector
             rawYaw = lx;
             rawElv = ly;
             rawRoll = rx;
             rawPitch = ry;
-            // return new Quaternion(lx, ly, rx, ry);
+
             return new Quaternion(rawYaw, rawElv, rawRoll, rawPitch);        
         }
     }
