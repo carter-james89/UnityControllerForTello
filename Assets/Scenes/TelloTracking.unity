@@ -2932,9 +2932,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3dcfbdfacebf6a6458abfe35952fa64c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _speed: 0.1
+  translationStyle: 2
+  _linearSpeed: 0.2
+  _nonLinearSpeed: 0.5
   _PIDprofile: {fileID: 1087489726}
-  _linearTranslation: 1
   _targetPoint: {fileID: 0}
 --- !u!4 &1362793618
 Transform:

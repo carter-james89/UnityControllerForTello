@@ -1,25 +1,39 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class PIDAutoPilot : MonoBehaviour, IAutoPilot
 {
+    public enum TranslationStyle
+    {
+        Linear,
+        NonLinear,
+        Instant,
+    }
+
+    public TranslationStyle translationStyle = TranslationStyle.Linear;
+
     private PidController _proximityPIDX;
     private PidController _proximityPIDY;
     private PidController _proximityPIDZ;
     private PidController _yawPID;
 
     [SerializeField]
-    private float _speed = .5f;
+    private float _linearSpeed = .5f;
+    [SerializeField]
+    private float _nonLinearSpeed = .5f;
 
     [SerializeField]
     private PIDProfile _PIDprofile;
 
-    [SerializeField]
-    private bool _linearTranslation;
-
     private float _originalDistToTarget;
     private Vector3 _originalQuadPos;
+
+
+    private float _achieveTargetDist = .1f;
+    public Action onAchievedTarget;
+    public bool atTarget { get; private set; }
 
     /// <summary>
     /// The current target <see cref="transform"/> is heading towardes 
@@ -87,23 +101,27 @@ public class PIDAutoPilot : MonoBehaviour, IAutoPilot
         PilotInputs.PilotInputValues returnValues = new PilotInputs.PilotInputValues();
         if (currentTargetPoint)
         {
-            if (_linearTranslation)
+            switch (translationStyle)
             {
-                var currentDist = Vector3.Distance(transform.position, currentTargetPoint.position);
-                var distTraveled = _originalDistToTarget - currentDist;
-
-                var fractTraveled = distTraveled / _originalDistToTarget;
-                transform.position = Vector3.Lerp(_originalQuadPos, currentTargetPoint.position, fractTraveled + (Time.deltaTime * _speed));
+                case TranslationStyle.Linear:
+                    var currentDist = Vector3.Distance(transform.position, currentTargetPoint.position);
+                    var distTraveled = _originalDistToTarget - currentDist;
+                    var fractTraveled = distTraveled / _originalDistToTarget;
+                    transform.position = Vector3.Lerp(_originalQuadPos, currentTargetPoint.position, fractTraveled + (Time.deltaTime * _linearSpeed));
+                    break;
+                case TranslationStyle.NonLinear:
+                    transform.position = Vector3.Lerp(transform.position, currentTargetPoint.position, Time.deltaTime * _nonLinearSpeed);
+                    break;
+                case TranslationStyle.Instant:
+                    transform.position = currentTargetPoint.position;
+                    break;
+                default:
+                    break;
             }
-            else
-            {
-                transform.position = Vector3.Lerp(transform.position, currentTargetPoint.position, Time.deltaTime * _speed);
-            }
-
 
             var targetOffset = _quadToControl.GetGameObject().transform.position - transform.position;
 
-            if (targetOffset.magnitude > .1f || _quadToControl.IsSimulator())//i think this was becasue real quads have hard time holding a position
+            if (targetOffset.magnitude > _achieveTargetDist || _quadToControl.IsSimulator())//i think this was becasue real quads have hard time holding a position
             {
                 _proximityPIDX.ProcessVariable = targetOffset.x;
                 double trgtRoll = _proximityPIDX.ControlVariable(deltaTime);
@@ -129,15 +147,20 @@ public class PIDAutoPilot : MonoBehaviour, IAutoPilot
                 returnValues.throttle = (float)trgtElv;
                 return _quadToControl.ConvertToHeadlessInputs(returnValues);
             }
+
+            if (targetOffset.magnitude < _achieveTargetDist && !atTarget)
+            {
+                onAchievedTarget?.Invoke();
+                atTarget = true;
+            }
         }
+     
         returnValues.yaw = 0;
         returnValues.pitch = 0;
         returnValues.roll = 0;
         returnValues.throttle = 0;
         return returnValues;
     }
-
-
 
     public void SetNewTarget(Transform newTarget)
     {
@@ -149,6 +172,7 @@ public class PIDAutoPilot : MonoBehaviour, IAutoPilot
             _originalQuadPos = transform.position;
             _originalDistToTarget = Vector3.Distance(_originalQuadPos, currentTargetPoint.position);
             SetAutoPilotRot(currentTargetPoint.rotation);
+            atTarget = false;
         }
         else
         {
@@ -168,8 +192,6 @@ public class PIDAutoPilot : MonoBehaviour, IAutoPilot
         tempEuler.x = 0;
         transform.rotation = Quaternion.Euler(tempEuler);
     }
-
-
 
     public void DeactivateAutoPilot()
     {
