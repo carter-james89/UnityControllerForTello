@@ -68,14 +68,16 @@ namespace UnityControllerForTello
         [SerializeField]
         private Transform _sensorGround;
 
+        private bool validTrackedFrame;
+
         /// <summary>
         /// Initialize the autopilot, and provide the depenencies it needs. 
         /// </summary>
         /// <param name="pilotInputs">Where to find the inputs from the pilot</param>
         /// <param name="autoPilot">The autopilot module used, activated via <see cref="ActivateAutoPilot"/></param>
-        public override void Initialize(PilotInputs pilotInputs, IAutoPilot autoPilot)
+        public override void Initialize(Func<IInputs.FlightControlValues> defaultInputSource)
         {
-            base.Initialize(pilotInputs, autoPilot);
+            base.Initialize(defaultInputSource);
             ConnectToTello();
         }
 
@@ -139,23 +141,18 @@ namespace UnityControllerForTello
                         CheckForLaunchComplete();
                         break;
                     case IQuadcopter.FlightStatus.Flying:
-                        bool validFrame = false;
                         try
                         {
-                            validFrame = SetVirtualTelloPosition();
+                            validTrackedFrame = SetVirtualTelloPosition();
                         }
                         catch (Exception e)
                         {
-                            Debug.Log(e + " : emergency land");
-                        }
-                        if (!validFrame & _autoPilot.IsActive())
-                        {
-                            Debug.Log("AutoPilot disabled because Tello Lost Tracking");
-                            _autoPilot.DeactivateAutoPilot();
+                            Debug.Log(e + " : Emergency Abort");
+                            abort?.Invoke();                          
                         }
                         break;
                 }
-                UpdateQuadcopter(); //need to run in update to get Input Values for this frame
+                ProcessInputs(); //need to run in update to get Input Values for this frame
                 SendTelloInputs();
             }
         }
@@ -350,6 +347,11 @@ namespace UnityControllerForTello
             base.OnDestroy();
             Tello.onConnection -= Tello_onStateChanged;
             Tello.onUpdate -= Tello_onUpdate;
+        }
+
+        public override bool IsTracking()
+        {
+            return validTrackedFrame;
         }
 
         //Tello api, public so they can be seen in inspector

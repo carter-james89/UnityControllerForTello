@@ -5,16 +5,26 @@ namespace UnityControllerForTello
     /// <summary>
     /// Interface for all Autopilot modules, designed to work with <see cref="IQuadcopter"/>
     /// </summary>
-    public interface IAutoPilot
+    /// <remarks>
+    /// <see cref="AutoPilot"/> should be a valid solution for most autopilots, this exists if drastic changes are needed
+    /// </remarks>
+    public interface IAutoPilot : IInputs
     {
+        /// <summary>
+        /// Prepare the autopilot for activation
+        /// </summary>
+        /// <param name="quadToControl">The quadcopter this autopilot will control</param>
+        public void Initialize(IQuadcopter quadToControl);
+
+        /// <summary>
+        /// Set the autopilot to its opposite state
+        /// </summary>
+        public void ToggleAutoPilot();
+
         /// <summary>
         /// Activate the autopilot
         /// </summary>
-        /// <param name="quadcopter">
-        /// The quadcopter this autopilot will control
-        /// Requires this for positional data
-        /// </param>
-        public void ActivateAutoPilot(IQuadcopter quadcopter);
+        public void ActivateAutoPilot();
 
         /// <summary>
         /// Deactivate the autopilot
@@ -32,7 +42,7 @@ namespace UnityControllerForTello
         /// </summary>
         /// <param name="deltaTime">The amount of time passed since the last time run was called, required for PIDs</param>
         /// <returns>The input values required to achieve the autopilots desired translation and rotation</returns>
-        public PilotInputs.PilotInputValues Run(System.TimeSpan deltaTime);
+      //  public PilotInputs.FlightControlValues Run(System.TimeSpan deltaTime);
 
         /// <summary>
         /// Is the autopilot currently active

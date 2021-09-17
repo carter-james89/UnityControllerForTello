@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace UnityControllerForTello
@@ -26,15 +27,15 @@ namespace UnityControllerForTello
         [SerializeField]
         private float drag;
 
-        public override void Initialize(PilotInputs pilotInputs, IAutoPilot autoPilot)
+        public override void Initialize(Func<IInputs.FlightControlValues> defaultInputSource)
         {
-            base.Initialize(pilotInputs, autoPilot);
+            base.Initialize(defaultInputSource);
             rigidBody = GetComponent<Rigidbody>();
         }
 
         private void Update()
         {
-            UpdateQuadcopter();
+            ProcessInputs();
         }
 
         /// <summary>
@@ -108,7 +109,20 @@ namespace UnityControllerForTello
             _flightStatus = IQuadcopter.FlightStatus.Flying;
         }
 
+        /// <summary>
+        /// This is a simulator
+        /// </summary>
+        /// <returns>True</returns>
         public override bool IsSimulator()
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// The simulator will never loose tracking
+        /// </summary>
+        /// <returns>True</returns>
+        public override bool IsTracking()
         {
             return true;
         }

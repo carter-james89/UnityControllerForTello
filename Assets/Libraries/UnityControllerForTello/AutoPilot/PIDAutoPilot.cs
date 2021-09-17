@@ -9,7 +9,7 @@ namespace UnityControllerForTello
     /// This <see cref="Transform"/> will interpolate between the start position and the final position depending on <see cref="TranslationStyle"/>
     /// and the quads only job is to try to reach this transform
     /// </summary>
-    public class PIDAutoPilot : MonoBehaviour, IAutoPilot
+    public class PIDAutoPilot : AutoPilot
     {
         /// <summary>
         /// Controls the roll input to close global X offset
@@ -35,57 +35,6 @@ namespace UnityControllerForTello
         protected PIDProfile _currentPIDProfile;
 
 
-
-        ///// <summary>
-        ///// Is <see cref="_quadToControl"/> at <see cref="currentTargetPoint"/>
-        ///// </summary>
-        //public bool atTarget { get; private set; }
-
-
-        /// <summary>
-        /// The <see cref="IQuadcopter"/> this autopilot is controlling, used for position information
-        /// Provided via <see cref="ActivateAutoPilot(IQuadcopter)"/>
-        /// </summary>
-        protected IQuadcopter _quadToControl;
-
-        /// <summary>
-        /// Get the <see cref="GameObject"/> this component belongs to
-        /// </summary>
-        /// <returns></returns>
-        public GameObject GetGameObject()
-        {
-            return gameObject;
-        }
-        /// <summary>
-        /// Is the autopilot currently active
-        /// </summary>
-        /// <returns>The state of the autopilot</returns> /// <summary>
-        public bool IsActive()
-        {
-            return enabled;
-        }
-
-        private void Awake()
-        {
-            DeactivateAutoPilot();
-        }
-
-        /// <summary>
-        /// Activate the autopilot, will not do anything until <see cref="currentTargetPoint"/> is set via <see cref="SetNewTarget(Transform)"/>
-        /// </summary>
-        /// <param name="quadcopter">The quadcopter to control</param>
-        public virtual void ActivateAutoPilot(IQuadcopter quadcopter)
-        {
-            if (!enabled)
-            {
-                Debug.Log("AutoPilot Enabled");
-                _quadToControl = quadcopter;
-                gameObject.SetActive(true);
-                MatchQuadTransform();
-
-                enabled = true;
-            }
-        }
         /// <summary>
         /// Update the PID values for the controller, stored in <see cref="PIDProfile"/>
         /// </summary>
@@ -108,17 +57,41 @@ namespace UnityControllerForTello
             _yawPID.SetPoint = 0;
         }
 
+
         /// <summary>
-        /// Calculate the <see cref="PilotInputs.PilotInputValues"/> needed to make <see cref="_quadToControl"/> match this Objects transform.position
-        /// Values are calculated in global space, so they are converted via <see cref="IQuadcopter.ConvertToHeadlessInputs(PilotInputs.PilotInputValues)"/> before being returned
+        /// How long has it been since the last Update, required for <see cref="PidController"/>
+        /// </summary>
+        /// <remarks>
+        /// Exposed in Inspector solely for debuging
+        /// </remarks>
+        [SerializeField]
+        private float _timeSinceLastUpdate;
+        /// <summary>
+        /// The time of the last update
+        /// </summary>
+        private float prevDeltaTime = 0;
+        /// <summary>
+        /// <see cref="prevDeltaTime"/> converted into <see cref="System.TimeSpan"/>
+        /// </summary>
+       // private System.TimeSpan telloDeltaTime;
+
+
+        /// <summary>
+        /// Calculate the <see cref="IInputs.FlightControlValues"/> needed to make <see cref="_quadToControl"/> match this Objects transform.position
+        /// Values are calculated in global space, so they are converted via <see cref="IQuadcopter.ConvertToHeadlessInputs(PilotInputs.FlightControlValues)"/> before being returned
         /// </summary>
         /// <param name="deltaTime">The timespan since Run was called last, required for <see cref="PidController"/></param>
         /// <returns>The appropriate Yaw,Pitch,Roll, to achieve the target, in Headless space in regards to <see cref="_quadToControl"/></returns>
-        public virtual PilotInputs.PilotInputValues Run(TimeSpan deltaTime)
+        public override IInputs.FlightControlValues Run()
         {
-            PilotInputs.PilotInputValues returnValues = new PilotInputs.PilotInputValues();
+            _timeSinceLastUpdate = Time.time - prevDeltaTime;
+            prevDeltaTime = Time.time;
+            var deltaTime1 = (int)(_timeSinceLastUpdate * 1000);
+            var deltaTime = new System.TimeSpan(0, 0, 0, 0, (deltaTime1));
 
-            var targetOffset = _quadToControl.GetGameObject().transform.position - transform.position;
+            IInputs.FlightControlValues returnValues = new IInputs.FlightControlValues();
+
+            var targetOffset = quadToControl.GetGameObject().transform.position - transform.position;
 
             _proximityPIDX.ProcessVariable = targetOffset.x;
             double trgtRoll = _proximityPIDX.ControlVariable(deltaTime);
@@ -128,7 +101,7 @@ namespace UnityControllerForTello
             _proximityPIDZ.ProcessVariable = targetOffset.z;
             double trgtPitch = _proximityPIDZ.ControlVariable(deltaTime);
 
-            var yawError = _quadToControl.GetGameObject().transform.eulerAngles.y - transform.eulerAngles.y;
+            var yawError = quadToControl.GetGameObject().transform.eulerAngles.y - transform.eulerAngles.y;
 
             if (yawError < -180)
                 yawError = 360 - System.Math.Abs(yawError);
@@ -142,41 +115,17 @@ namespace UnityControllerForTello
             returnValues.pitch = (float)trgtPitch;
             returnValues.roll = (float)trgtRoll;
             returnValues.throttle = (float)trgtElv;
-            return _quadToControl.ConvertToHeadlessInputs(returnValues);
+            return quadToControl.ConvertToHeadlessInputs(returnValues);
         }
 
-        /// <summary>
-        /// Maniplate this objects <see cref="Transform"/> to match <see cref="_quadToControl"/>
-        /// </summary>
-        protected void MatchQuadTransform()
+        protected override void OnAutoPilotActivated()
         {
-            transform.position = _quadToControl.GetGameObject().transform.position;
-            SetAutoPilotRot(_quadToControl.GetGameObject().transform.rotation);
+          
         }
 
-        /// <summary>
-        /// Set the rotaion of this objects <see cref="Transform"/> to match the provided rotation, global X and global y will be nullified
-        /// </summary>
-        /// <param name="newRot">The new rotation of this transform</param>
-        public void SetAutoPilotRot(Quaternion newRot)
+        protected override void OnAutoPilotDeactivated()
         {
-            var tempEuler = newRot.eulerAngles;
-            tempEuler.x = 0;
-            tempEuler.z = 0;
-            transform.rotation = Quaternion.Euler(tempEuler);
-        }
-
-        /// <summary>
-        /// If currently active, deactivate the autopilot
-        /// </summary>
-        public void DeactivateAutoPilot()
-        {
-            if (enabled)
-            {
-                Debug.Log("AutoPilot Disabled");
-                gameObject.SetActive(false);
-                enabled = false;
-            }
+            
         }
     }
 }

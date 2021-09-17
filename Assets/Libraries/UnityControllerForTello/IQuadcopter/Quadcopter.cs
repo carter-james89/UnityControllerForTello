@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using UnityEngine;
 
 namespace UnityControllerForTello
@@ -10,15 +11,9 @@ namespace UnityControllerForTello
     public abstract class Quadcopter : MonoBehaviour, IQuadcopter
     {
         /// <summary>
-        /// The source of Inputs from pilot, supplied in <see cref="Initialize(PilotInputs, IAutoPilot)"/>
+        /// The current inputs for this Frame from either <see cref="defaultInputSource"/> or <see cref="overrideInputSource"/>, set in <see cref="ProcessInputs"/>
         /// </summary>
-        protected PilotInputs _pilotInputs;
-        /// <summary>
-        /// The AutoPilot modeule to use, supplied in <see cref="Initialize(PilotInputs, IAutoPilot)"/>
-        /// </summary>
-        protected IAutoPilot _autoPilot;
-
-        public Action<bool> onAutoPilotStateChanged;
+        protected IInputs.FlightControlValues currentInputs;
 
         /// <summary>
         /// Used to visalize the trail the quadcopter has traveled
@@ -34,23 +29,6 @@ namespace UnityControllerForTello
         /// </summary>
         [SerializeField]
         protected IQuadcopter.FlightStatus _flightStatus;
-
-        /// <summary>
-        /// How long has it been since the last Update, required for <see cref="PidController"/>
-        /// </summary>
-        /// <remarks>
-        /// Exposed in Inspector solely for debuging
-        /// </remarks>
-        [SerializeField]
-        private float _timeSinceLastUpdate;
-        /// <summary>
-        /// The time of the last update
-        /// </summary>
-        private float prevDeltaTime = 0;
-        /// <summary>
-        /// <see cref="prevDeltaTime"/> converted into <see cref="System.TimeSpan"/>
-        /// </summary>
-        private System.TimeSpan telloDeltaTime;
 
         /// <summary>
         /// Should the Quad run in headless mode?
@@ -86,53 +64,69 @@ namespace UnityControllerForTello
         /// </summary>
         public Vector3 homePoint { get; private set; }
 
+
         /// <summary>
         /// The updates supplied by either the Pilot or the AutoPilot for this frame
         /// </summary>
-        protected PilotInputs.PilotInputValues currentInputs;
+        protected Func<IInputs.FlightControlValues> defaultInputSource;
+        /// <summary>
+        /// The updates supplied by either the Pilot or the AutoPilot for this frame
+        /// </summary>
+        protected Func<IInputs.FlightControlValues> overrideInputSource;
 
         /// <summary>
         /// Initialize the autopilot, and provide the depenencies it needs. 
         /// </summary>
         /// <param name="pilotInputs">Where to find the inputs from the pilot</param>
         /// <param name="autoPilot">The autopilot module used, activated via <see cref="ActivateAutoPilot"/></param>
-        public virtual void Initialize(PilotInputs pilotInputs, IAutoPilot autoPilot)
+        public virtual void Initialize(Func<IInputs.FlightControlValues> defaultInputSource)
         {
             _flightStatus = IQuadcopter.FlightStatus.PreLaunch;
-            _pilotInputs = pilotInputs;
-            _autoPilot = autoPilot;
+
+            this.defaultInputSource = defaultInputSource;
 
             if (_trailVisualizer)
             {
                 _trailVisualizer.Initialize(this);
             }
-
-            _pilotInputs.takeOff += TakeOff;
-            _pilotInputs.land += Land;
-            _pilotInputs.toggleAutoPilot += ToggleAutoPilot;
         }
 
         /// <summary>
-        /// Run the quadcopter "frame"
+        /// Proccess the inputs from either <see cref="defaultInputSource"/> or <see cref="overrideInputSource"/>
+        /// Also executes commands
         /// </summary>
-        protected void UpdateQuadcopter()
+        protected void ProcessInputs()
         {
-            _timeSinceLastUpdate = Time.time - prevDeltaTime;
-            prevDeltaTime = Time.time;
-            var deltaTime1 = (int)(_timeSinceLastUpdate * 1000);
-            telloDeltaTime = new System.TimeSpan(0, 0, 0, 0, (deltaTime1));
-
-            if (_autoPilot != null)
+            var defaultInputs = defaultInputSource.Invoke();
+            if (
+              defaultInputs.yaw != 0 ||
+               defaultInputs.pitch != 0 ||
+              defaultInputs.roll != 0 ||
+               defaultInputs.throttle != 0 ||
+               defaultInputs.takeOff ||
+               defaultInputs.land )
             {
-                if (_autoPilot.IsActive() && _pilotInputs.UserInputingValues())
+                if(overrideInputSource != null)
                 {
-                    Debug.Log("Pilot Input Disabled AutoPilot");
-                    _autoPilot.DeactivateAutoPilot();
+                    Debug.LogWarning("Inputs detected from Default Input Source, borting override");
+                    abort?.Invoke();
+                    if(overrideInputSource != null)
+                    {
+                        overrideInputSource = null;
+                        Debug.LogWarning("RemoveInputOverride was not removed via Abort, this should have been done by the Action supplied to OverrideInputSource");
+                    }                  
                 }
             }
-            _pilotInputs.GetFlightCommmands();
 
-            currentInputs = _autoPilot.IsActive() ? _autoPilot.Run(telloDeltaTime) : _headLessMode ? ConvertToHeadlessInputs(_pilotInputs.pilotInputValues) : _pilotInputs.pilotInputValues;
+            currentInputs = overrideInputSource == null ? _headLessMode ? ConvertToHeadlessInputs(defaultInputs):  defaultInputs : overrideInputSource.Invoke();
+            if (currentInputs.takeOff && _flightStatus == IQuadcopter.FlightStatus.PreLaunch)
+            {
+                TakeOff();
+            }
+            else if (currentInputs.land)
+            {
+                Land();
+            }
         }
         /// <summary>
         /// Calculate the Roll and Pitch values to acheive the desired headless direction
@@ -140,7 +134,7 @@ namespace UnityControllerForTello
         /// <remarks>
         /// Transform.Right/Forward has no positional data, which is why Vector3.Project works between headlessDir and Transform.Right/Forward
         /// </remarks>
-        public virtual PilotInputs.PilotInputValues ConvertToHeadlessInputs(PilotInputs.PilotInputValues rawInputs)
+        public virtual IInputs.FlightControlValues ConvertToHeadlessInputs(IInputs.FlightControlValues rawInputs)
         {
             var headLessDir = new Vector3(rawInputs.roll, 0, rawInputs.pitch);
 
@@ -167,68 +161,6 @@ namespace UnityControllerForTello
             return rawInputs;
         }
 
-        /// <summary>
-        /// Toggled the <see cref="IAutoPilot"/> to the opposite of its current state
-        /// </summary>
-        protected void ToggleAutoPilot()
-        {
-            if (_autoPilot != null)
-            {
-                if (_autoPilot.IsActive())
-                {
-                    DeactivateAutoPilot();
-                }
-                else
-                {
-                    ActivateAutoPilot();
-                }
-            }
-        }
-        /// <summary>
-        /// If provided via <see cref="Initialize(PilotInputs, IAutoPilot)"/>, activate <see cref="_autoPilot"/>
-        /// </summary>
-        public void ActivateAutoPilot()
-        {
-            if (_autoPilot != null)
-            {
-                if (!_autoPilot.IsActive())
-                {
-                    _autoPilot.ActivateAutoPilot(this);
-                    onAutoPilotStateChanged?.Invoke(true);
-                }
-                else
-                {
-                    Debug.Log("Autopilot is already active");
-                }
-            }
-            else
-            {
-                Debug.LogWarning("No IAutoPilot suppled in Initialize");
-            }
-        }
-        /// <summary>
-        /// If provided via <see cref="Initialize(PilotInputs, IAutoPilot)"/>, deactivate <see cref="_autoPilot"/>
-        /// </summary>
-        public void DeactivateAutoPilot()
-        {
-            if (_autoPilot != null)
-            {
-                if (_autoPilot.IsActive())
-                {
-                    _autoPilot.DeactivateAutoPilot();
-                    onAutoPilotStateChanged?.Invoke(false);
-                }
-                else
-                {
-                    Debug.Log("Autopilot is not currently active");
-                }
-            }
-            else
-            {
-                Debug.LogWarning("No IAutoPilot suppled in Initialize");
-            }
-        }
-
         public GameObject GetGameObject()
         {
             return gameObject;
@@ -236,12 +168,6 @@ namespace UnityControllerForTello
 
         protected virtual void OnDestroy()
         {
-            if (_pilotInputs)
-            {
-                _pilotInputs.takeOff -= TakeOff;
-                _pilotInputs.land -= Land;
-                _pilotInputs.toggleAutoPilot -= ToggleAutoPilot;
-            }
         }
 
         /// <summary>
@@ -265,6 +191,65 @@ namespace UnityControllerForTello
         public void SetHomePoint(Vector3 newHomePoint)
         {
             homePoint = newHomePoint;
+        }
+
+        /// <summary>
+        /// Override <see cref="defaultInputSource"/>, this quad will now query the provided input source for its <see cref="IInputs.FlightControlValues"/>
+        /// </summary>
+        /// <param name="inputValueSource">The source of the inputs to use</param>
+        /// <param name="abortListener">What should be raised if the quad aborts and returns to <see cref="defaultInputSource"/></param>
+        public void OverrideInputSource(Func<IInputs.FlightControlValues> inputValueSource, Action abortListener)
+        {
+            overrideInputSource = inputValueSource;
+            SubscibeToAbort(abortListener);
+        }
+        /// <summary>
+        /// Removed the provided <see cref="IInputs.FlightControlValues"/> source, and return the quad to <see cref="defaultInputSource"/>
+        /// </summary>
+        /// <param name="inputValueSource">The Input Source to remove, must match the current <see cref="overrideInputSource"/></param>
+        /// <param name="abortListener">The action that was provided as an Abort listener, must match the one provided in <see cref="overrideInputSource"/></param>
+        public void RemoveInputOverride(Func<IInputs.FlightControlValues> inputValueSource, Action abortListener)
+        {
+            if (inputValueSource == overrideInputSource)
+            {
+                overrideInputSource = null;
+                UnsubscribeFromAbort(abortListener);
+            }
+        }
+        /// <summary>
+        /// Is the quad currently in a valid state of tracking?
+        /// </summary>
+        /// <returns></returns>
+        public abstract bool IsTracking();
+
+        /// <summary>
+        /// Action to raise if the quad needs to Abort and return to <see cref="defaultInputSource"/>
+        /// </summary>
+        protected Action abort;
+        /// <summary>
+        /// Subscribe to <see cref="abort"/>, this is raised whenever <see cref="overrideInputSource"/> is overridden by <see cref="defaultInputSource"/>
+        /// or if the quad looses tracking
+        /// </summary>
+        /// <param name="actionToSubscribe">The function to be called when <see cref="abort"/> is raised</param>
+        public void SubscibeToAbort(Action actionToSubscribe)
+        {
+            abort += actionToSubscribe;
+        }
+        /// <summary>
+        /// Unsubscribe from <see cref="abort"/>
+        /// The function to be unsubscribed must have been previously subscribed
+        /// </summary>
+        /// <param name="actionToUnsubscribe">The function to unsubscribe</param>
+        public void UnsubscribeFromAbort(Action actionToUnsubscribe)
+        {
+            if (abort.GetInvocationList().ToList().Contains(actionToUnsubscribe))
+            {
+                abort -= actionToUnsubscribe;
+            }
+            else
+            {
+                Debug.LogWarning("Trying to Unsubscribe an action from Abort that was never Subscribed, this should not happen");
+            }
         }
     }
 }

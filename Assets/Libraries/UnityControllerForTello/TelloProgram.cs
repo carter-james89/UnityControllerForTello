@@ -77,31 +77,37 @@ namespace UnityControllerForTello
             switch (sceneType)
             {
                 case SceneType.Flight:
-                    quadcopter = tello.GetComponent<IQuadcopter>();
+                    quadcopter = tello;
                     telloSimulator.gameObject.SetActive(false);
                     break;
                 case SceneType.Simulation:
-                    quadcopter = telloSimulator.GetComponent<IQuadcopter>();
+                    quadcopter = telloSimulator;
                     tello.gameObject.SetActive(false);
                     break;
                 default:
                     break;
             }
-            quadcopter.Initialize(_pilotInupts, _waypointPilot);
-
-            (quadcopter as Quadcopter).onAutoPilotStateChanged += OnAutoPilotStateChanged;
+            quadcopter.Initialize(_pilotInupts.GetInputValues);
+            _waypointPilot.Initialize(quadcopter);
         }
 
-        private void OnAutoPilotStateChanged(bool state)
-        {
-            if (state && _waypointMission && _waypointMission.gameObject.activeInHierarchy)
-            {
-                _waypointMission.BeginMission(_waypointPilot);
-            }
-        }
 
         private void Update()
         {
+            var pilotInputs = _pilotInupts.GetInputValues();
+            if (pilotInputs.toggleAutoPilot)
+            {
+                _waypointPilot.ToggleAutoPilot();
+            }
+
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                if (_waypointMission && _waypointMission.gameObject.activeInHierarchy)
+                {
+                    _waypointMission.BeginMission(_waypointPilot);
+                }
+            }
+
             if (_waypointPilotTarget && _waypointPilot.currentWaypoint != _waypointPilotTarget)
             {
                 _waypointPilot.SetNewWaypoint(_waypointPilotTarget);

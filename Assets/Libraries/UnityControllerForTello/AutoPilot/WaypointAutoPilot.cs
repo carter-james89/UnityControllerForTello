@@ -5,6 +5,9 @@ using UnityEngine;
 
 namespace UnityControllerForTello
 {
+    /// <summary>
+    /// An autopilot which will attempt to fly <see cref="AutoPilot.quadToControl"/> to a <see cref="Waypoint"/> in 3D space
+    /// </summary>
     public class WaypointAutoPilot : PIDAutoPilot
     {
         /// <summary>
@@ -122,18 +125,18 @@ namespace UnityControllerForTello
         /// </summary>
         public Waypoint currentWaypoint { get; private set; }
 
-        public override void ActivateAutoPilot(IQuadcopter quadcopter)
+        protected override void OnAutoPilotActivated()
         {
             SetTransitionSytle(translationStyle);
-            base.ActivateAutoPilot(quadcopter);
+            base.OnAutoPilotActivated();
         }
         /// <summary>
-        /// Calculate the <see cref="PilotInputs.PilotInputValues"/> needed to make <see cref="_quadToControl"/> match this Objects transform.position
-        /// Values are calculated in global space, so they are converted via <see cref="IQuadcopter.ConvertToHeadlessInputs(PilotInputs.PilotInputValues)"/> before being returned
+        /// Calculate the <see cref="PilotInputs.FlightControlValues"/> needed to make <see cref="_quadToControl"/> match this Objects transform.position
+        /// Values are calculated in global space, so they are converted via <see cref="IQuadcopter.ConvertToHeadlessInputs(PilotInputs.FlightControlValues)"/> before being returned
         /// </summary>
         /// <param name="deltaTime">The timespan since Run was called last, required for <see cref="PidController"/></param>
         /// <returns>The appropriate Yaw,Pitch,Roll, to achieve the target, in Headless space in regards to <see cref="_quadToControl"/></returns>
-        public override PilotInputs.PilotInputValues Run(TimeSpan deltaTime)
+        public override IInputs.FlightControlValues Run()
         {
             if (currentWaypoint)
             {
@@ -155,14 +158,14 @@ namespace UnityControllerForTello
                         break;
                 }
 
-                var distToFinalTarget = Vector3.Distance(_quadToControl.GetGameObject().transform.position, currentWaypoint.transform.position);
+                var distToFinalTarget = Vector3.Distance(quadToControl.GetGameObject().transform.position, currentWaypoint.transform.position);
                 if (distToFinalTarget < _achieveTargetDist && !atWaypoint)
                 {
                     atWaypoint = true;
                     onWaypointAchieved?.Invoke(currentWaypoint);
                 }
             }
-            return base.Run(deltaTime);
+            return base.Run();
         }
 
 
