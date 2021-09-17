@@ -110,7 +110,12 @@ namespace UnityControllerForTello
         /// <summary>
         /// Event to be raised when <see cref="_achieveTargetDist"/> is reached
         /// </summary>
-        public Action<Waypoint> onAchievedTarget;
+        public Action<Waypoint> onWaypointAchieved;
+
+        /// <summary>
+        /// Event to be raised when new <see cref="_achieveTargetDist"/> is set
+        /// </summary>
+        public Action<Waypoint> onWaypointSet;
 
         /// <summary>
         /// The current target <see cref="transform"/> is heading towardes 
@@ -155,7 +160,7 @@ namespace UnityControllerForTello
                 {
                     Debug.Log("set at target to true");
                     atWaypoint = true;
-                    onAchievedTarget?.Invoke(currentWaypoint);
+                    onWaypointAchieved?.Invoke(currentWaypoint);
                 }
             }
             return base.Run(deltaTime);
@@ -165,19 +170,19 @@ namespace UnityControllerForTello
         /// <summary>
         /// Set a new Target for <see cref="_quadToControl"/> to try and achieve
         /// </summary>
-        /// <param name="newTarget">The target to match position and rotation</param>
-        public void SetNewWaypoint(Waypoint newTarget)
+        /// <param name="newWaypoint">The target to match position and rotation</param>
+        public void SetNewWaypoint(Waypoint newWaypoint)
         {
             if (enabled)
             {
                 Debug.Log("Set new target point");
                 atWaypoint = false;
                 MatchQuadTransform();
-                currentWaypoint = newTarget;
+                currentWaypoint = newWaypoint;
                 _originalQuadPos = transform.position;
                 _originalDistToTarget = Vector3.Distance(_originalQuadPos, currentWaypoint.transform.position);
                 SetAutoPilotRot(currentWaypoint.transform.rotation);
-
+                onWaypointSet?.Invoke(newWaypoint);
             }
             else
             {

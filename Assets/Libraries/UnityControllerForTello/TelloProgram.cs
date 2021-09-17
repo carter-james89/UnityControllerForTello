@@ -36,7 +36,7 @@ namespace UnityControllerForTello
         /// Exposed inspector field to easily change <see cref="PIDAutoPilot.currentTargetPoint"/>
         /// </summary>
         [SerializeField]
-        private Transform _waypointPilotTarget;
+        private Waypoint _waypointPilotTarget;
 
         /// <summary>
         /// The source of the Pilot inputs for this program
@@ -104,14 +104,14 @@ namespace UnityControllerForTello
 
         private void Update()
         {
-            //if (_waypointPilotTarget && _waypointPilot.currentTargetPoint != _waypointPilotTarget)
-            //{
-            //    _waypointPilot.SetNewTarget(_waypointPilotTarget);
-            //}
-            //if (autoPilotTransitionSytle != _waypointPilot.translationStyle)
-            //{
-            //    _waypointPilot.SetTransitionSytle(autoPilotTransitionSytle);
-            //}
+            if (_waypointPilotTarget && _waypointPilot.currentWaypoint != _waypointPilotTarget)
+            {
+                _waypointPilot.SetNewWaypoint(_waypointPilotTarget);
+            }
+            if (autoPilotTransitionSytle != _waypointPilot.translationStyle)
+            {
+                _waypointPilot.SetTransitionSytle(autoPilotTransitionSytle);
+            }
         }
     } 
 }

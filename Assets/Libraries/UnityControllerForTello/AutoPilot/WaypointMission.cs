@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityControllerForTello;
 using UnityEngine;
@@ -22,16 +23,38 @@ public class WaypointMission : MonoBehaviour
         {
             return;
         }
-        missionActive = true;
-
-        _autoPilot = autoPilot;
-        _autoPilot.onAchievedTarget += OnQuadcopterAtTarget;
-
-        if(_waypoints == null || _waypoints.Count == 0)
+        if (_waypoints == null || _waypoints.Count == 0)
         {
             return;
         }
+        missionActive = true;
+
+        _autoPilot = autoPilot;
+        _autoPilot.onWaypointAchieved += OnQuadcopterAtTarget;
+        _autoPilot.onWaypointSet += OnNewWaypointSet;
+
+        currentWaypoint = _waypoints[0];
         _autoPilot.SetNewWaypoint(_waypoints[0]);
+    }
+
+    public void EndMission()
+    {
+        if (missionActive)
+        {
+            Debug.Log("End Mission : " + name);
+            missionActive = false;
+            _autoPilot.onWaypointAchieved -= OnQuadcopterAtTarget;
+            _autoPilot.onWaypointSet -= OnNewWaypointSet;
+        }  
+    }
+
+    private void OnNewWaypointSet(Waypoint newWaypointSet)
+    {
+        if (missionActive && newWaypointSet != currentWaypoint)
+        {
+            Debug.Log("A waypoint has been set from outside the Mission : " + newWaypointSet);
+            EndMission();
+        }
     }
 
     private void OnQuadcopterAtTarget(Waypoint targetTransform)
@@ -62,10 +85,6 @@ public class WaypointMission : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (_autoPilot)
-        {
-            _autoPilot.onAchievedTarget -= OnQuadcopterAtTarget;
-        }
-      
+        EndMission();
     }
 }
