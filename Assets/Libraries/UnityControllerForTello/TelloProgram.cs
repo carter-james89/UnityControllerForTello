@@ -90,13 +90,11 @@ namespace UnityControllerForTello
             quadcopter.Initialize(_pilotInupts, _waypointPilot);
 
             (quadcopter as Quadcopter).onAutoPilotStateChanged += OnAutoPilotStateChanged;
-
-
         }
 
         private void OnAutoPilotStateChanged(bool state)
         {
-            if (state)
+            if (state && _waypointMission && _waypointMission.gameObject.activeInHierarchy)
             {
                 _waypointMission.BeginMission(_waypointPilot);
             }

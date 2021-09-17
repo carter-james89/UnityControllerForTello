@@ -158,7 +158,6 @@ namespace UnityControllerForTello
                 var distToFinalTarget = Vector3.Distance(_quadToControl.GetGameObject().transform.position, currentWaypoint.transform.position);
                 if (distToFinalTarget < _achieveTargetDist && !atWaypoint)
                 {
-                    Debug.Log("set at target to true");
                     atWaypoint = true;
                     onWaypointAchieved?.Invoke(currentWaypoint);
                 }
