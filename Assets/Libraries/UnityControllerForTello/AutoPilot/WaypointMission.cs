@@ -9,14 +9,14 @@ public class WaypointMission : MonoBehaviour
 
     public Waypoint currentWaypoint { get; private set; }
 
-    private PIDAutoPilot _autoPilot;
+    private WaypointAutoPilot _autoPilot;
 
     [SerializeField]
     private bool _loopMission;
 
     public bool missionActive { get; private set; } = false;
 
-    public void BeginMission(PIDAutoPilot autoPilot)
+    public void BeginMission(WaypointAutoPilot autoPilot)
     {
         if (!autoPilot)
         {
@@ -31,21 +31,21 @@ public class WaypointMission : MonoBehaviour
         {
             return;
         }
-        _autoPilot.SetNewTarget(_waypoints[0].transform);
+        _autoPilot.SetNewWaypoint(_waypoints[0]);
     }
 
-    private void OnQuadcopterAtTarget(Transform targetTransform)
+    private void OnQuadcopterAtTarget(Waypoint targetTransform)
     {        
         for (int i = 0; i < _waypoints.Count; i++)
         {
-            if(_waypoints[i].transform == targetTransform)
+            if(_waypoints[i] == targetTransform)
             {
                 Debug.Log("Quad at Waypoint : " + _waypoints[i].name);
                 if (i != _waypoints.Count - 1)
                 {
                     Debug.Log("Set Next Waypoint : " + _waypoints[i + 1].name);
                     currentWaypoint = _waypoints[i + 1];
-                    _autoPilot.SetNewTarget(currentWaypoint.transform);
+                    _autoPilot.SetNewWaypoint(currentWaypoint);
                     return;
                 }
                 else
@@ -53,7 +53,7 @@ public class WaypointMission : MonoBehaviour
                     if (_loopMission)
                     {
                         currentWaypoint = _waypoints[0];
-                        _autoPilot.SetNewTarget(currentWaypoint.transform);
+                        _autoPilot.SetNewWaypoint(currentWaypoint);
                     }
                 }
             }

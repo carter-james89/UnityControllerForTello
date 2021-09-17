@@ -25,18 +25,18 @@ namespace UnityControllerForTello
         /// The autopilot to provide to the <see cref="quadcopter/>
         /// </summary>
         [SerializeField]
-        private PIDAutoPilot _autoPilot;
+        private WaypointAutoPilot _waypointPilot;
 
         /// <summary>
         /// Exposed inspector dropdown to easily change <see cref="PIDAutoPilot.translationStyle"/>
         /// </summary>
-        public PIDAutoPilot.TranslationStyle autoPilotTransitionSytle = PIDAutoPilot.TranslationStyle.Linear;
+        public WaypointAutoPilot.TranslationStyle autoPilotTransitionSytle = WaypointAutoPilot.TranslationStyle.Linear;
 
         /// <summary>
         /// Exposed inspector field to easily change <see cref="PIDAutoPilot.currentTargetPoint"/>
         /// </summary>
         [SerializeField]
-        private Transform _autoPilotTarget;
+        private Transform _waypointPilotTarget;
 
         /// <summary>
         /// The source of the Pilot inputs for this program
@@ -87,7 +87,7 @@ namespace UnityControllerForTello
                 default:
                     break;
             }
-            quadcopter.Initialize(_pilotInupts, _autoPilot);
+            quadcopter.Initialize(_pilotInupts, _waypointPilot);
 
             (quadcopter as Quadcopter).onAutoPilotStateChanged += OnAutoPilotStateChanged;
 
@@ -98,20 +98,20 @@ namespace UnityControllerForTello
         {
             if (state)
             {
-                _waypointMission.BeginMission(_autoPilot);
+                _waypointMission.BeginMission(_waypointPilot);
             }
         }
 
         private void Update()
         {
-            //if (_autoPilotTarget && _autoPilot.currentTargetPoint != _autoPilotTarget)
+            //if (_waypointPilotTarget && _waypointPilot.currentTargetPoint != _waypointPilotTarget)
             //{
-            //    _autoPilot.SetNewTarget(_autoPilotTarget);
+            //    _waypointPilot.SetNewTarget(_waypointPilotTarget);
             //}
-            if (autoPilotTransitionSytle != _autoPilot.translationStyle)
-            {
-                _autoPilot.SetTransitionSytle(autoPilotTransitionSytle);
-            }
+            //if (autoPilotTransitionSytle != _waypointPilot.translationStyle)
+            //{
+            //    _waypointPilot.SetTransitionSytle(autoPilotTransitionSytle);
+            //}
         }
     } 
 }
