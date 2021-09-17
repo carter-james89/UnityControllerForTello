@@ -18,6 +18,8 @@ namespace UnityControllerForTello
         /// </summary>
         protected IAutoPilot _autoPilot;
 
+        public Action<bool> onAutoPilotStateChanged;
+
         /// <summary>
         /// Used to visalize the trail the quadcopter has traveled
         /// </summary>
@@ -192,6 +194,7 @@ namespace UnityControllerForTello
                 if (!_autoPilot.IsActive())
                 {
                     _autoPilot.ActivateAutoPilot(this);
+                    onAutoPilotStateChanged?.Invoke(true);
                 }
                 else
                 {
@@ -213,6 +216,7 @@ namespace UnityControllerForTello
                 if (_autoPilot.IsActive())
                 {
                     _autoPilot.DeactivateAutoPilot();
+                    onAutoPilotStateChanged?.Invoke(false);
                 }
                 else
                 {

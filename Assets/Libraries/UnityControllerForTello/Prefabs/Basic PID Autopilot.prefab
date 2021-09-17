@@ -148,16 +148,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 21d4a2b9885ed384d9facf4ca448b1f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  PIDxP: 1.5
-  PIDxI: 0.1
-  PIDxD: 0.5
-  PIDyP: 1.5
-  PIDyI: 1.5
-  PIDyD: 0
-  PIDzP: 1.5
-  PIDzI: 0.1
-  PIDzD: 0.5
-  yawP: 0.05
+  PIDxP: 0.7
+  PIDxI: 0
+  PIDxD: 0.1
+  PIDyP: 0.7
+  PIDyI: 0
+  PIDyD: 0.1
+  PIDzP: 0.7
+  PIDzI: 0
+  PIDzD: 0
+  yawP: 0.001
   yawI: 0
   yawD: 0
 --- !u!1 &6868601669197933362

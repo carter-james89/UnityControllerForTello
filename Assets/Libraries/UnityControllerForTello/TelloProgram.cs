@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace UnityControllerForTello
@@ -43,6 +44,9 @@ namespace UnityControllerForTello
         [SerializeField]
         private PilotInputs _pilotInupts;
 
+        [SerializeField]
+        private WaypointMission _waypointMission;
+
         /// <summary>
         /// Different Scene Modes
         /// </summary>
@@ -84,14 +88,26 @@ namespace UnityControllerForTello
                     break;
             }
             quadcopter.Initialize(_pilotInupts, _autoPilot);
+
+            (quadcopter as Quadcopter).onAutoPilotStateChanged += OnAutoPilotStateChanged;
+
+
+        }
+
+        private void OnAutoPilotStateChanged(bool state)
+        {
+            if (state)
+            {
+                _waypointMission.BeginMission(_autoPilot);
+            }
         }
 
         private void Update()
         {
-            if (_autoPilotTarget && _autoPilot.currentTargetPoint != _autoPilotTarget)
-            {
-                _autoPilot.SetNewTarget(_autoPilotTarget);
-            }
+            //if (_autoPilotTarget && _autoPilot.currentTargetPoint != _autoPilotTarget)
+            //{
+            //    _autoPilot.SetNewTarget(_autoPilotTarget);
+            //}
             if (autoPilotTransitionSytle != _autoPilot.translationStyle)
             {
                 _autoPilot.SetTransitionSytle(autoPilotTransitionSytle);
