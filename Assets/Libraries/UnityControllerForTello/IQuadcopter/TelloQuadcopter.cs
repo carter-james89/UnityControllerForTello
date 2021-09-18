@@ -135,6 +135,8 @@ namespace UnityControllerForTello
             if (_lastTelloUpdateFrame != Time.frameCount)
             {
                 SyncDataWithTello();
+                SetSensorGround();
+
                 switch (_flightStatus)
                 {
                     case IQuadcopter.FlightStatus.Launching:
@@ -179,7 +181,10 @@ namespace UnityControllerForTello
         /// </remarks>
         public void CheckForLaunchComplete()
         {
-            if (flymode == 6 && flying)
+            var deltaRawPosition = _prevRawPosition - rawPosition;
+            _prevRawPosition = rawPosition;
+
+            if (flymode == 6 && flying || deltaRawPosition.magnitude > 1)
             {
                 Debug.Log("launch complete");
                 _trackingFoundOffset = new Vector3(posX, posY, posZ);
@@ -210,9 +215,10 @@ namespace UnityControllerForTello
         /// Get the current position of the Tello, taking into account the <see cref="_trackingFoundOffset"/> described in <see cref="CheckForLaunchComplete"/>
         /// </summary>
         /// <returns>The Global Postion of the Tello</returns>
-        private Vector3 GetCurrentPos()
+        public Vector3 GetCurrentPos()
         {
-            return new Vector3(posX - _trackingFoundOffset.x, posY - _trackingFoundOffset.y, posZ - _trackingFoundOffset.z);
+           // return new Vector3(posX - _trackingFoundOffset.x, posY - _trackingFoundOffset.y + _elevationOffset, posZ - _trackingFoundOffset.z);
+            return new Vector3(posX - _trackingFoundOffset.x, height * .1f, posZ - _trackingFoundOffset.z);
         }
 
         /// <summary>
@@ -229,6 +235,8 @@ namespace UnityControllerForTello
             posX = Tello.state.posY;
             posY = -Tello.state.posZ;
             posZ = Tello.state.posX;
+
+            rawPosition = new Vector3(posX, posY, posZ);
 
             quatW = state.quatW;
             quatX = state.quatW;
@@ -270,6 +278,10 @@ namespace UnityControllerForTello
             hover = state.droneHover;
         }
 
+        public Vector3 adjustedPosition;
+        public Vector3 rawPosition;
+        private Vector3 _prevRawPosition;
+
         /// <summary>
         /// Set the position of the virtual Tello in the Unity environment
         /// </summary>
@@ -277,8 +289,8 @@ namespace UnityControllerForTello
         public bool SetVirtualTelloPosition()
         {
             validTrackingFrame = true;
-            var currentPos = GetCurrentPos();
-            Vector3 dif = currentPos - transform.position;
+            adjustedPosition = GetCurrentPos();
+            Vector3 dif = adjustedPosition - transform.position;
             var xDif = dif.x;
             var yDif = dif.y;
             var zDif = dif.z;
@@ -286,8 +298,8 @@ namespace UnityControllerForTello
             //valid tello frame
             if (Mathf.Abs(xDif) < 2 & Mathf.Abs(yDif) < 2 & Mathf.Abs(zDif) < 2)
             {
-                transform.position = currentPos;
-                transform.position += new Vector3(0, _elevationOffset, 0);
+                transform.position = adjustedPosition;
+               // transform.position += new Vector3(0, _elevationOffset, 0);
                 yaw = yaw * (180 / Mathf.PI);
                 pitch = (pitch * (180 / Mathf.PI));
                 roll = roll * (180 / Mathf.PI);
@@ -313,6 +325,7 @@ namespace UnityControllerForTello
                 Debug.Log("TakeOff");
                 Tello.takeOff();
                 _flightStatus = IQuadcopter.FlightStatus.Launching;
+                _prevRawPosition = rawPosition;
             }
             else
             {

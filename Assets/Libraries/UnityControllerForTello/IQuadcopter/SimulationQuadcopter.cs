@@ -27,10 +27,14 @@ namespace UnityControllerForTello
         [SerializeField]
         private float drag;
 
+        public float timeSpeed = 1;
+
         public override void Initialize(Func<IInputs.FlightControlValues> defaultInputSource)
         {
             base.Initialize(defaultInputSource);
             rigidBody = GetComponent<Rigidbody>();
+
+            Time.timeScale = timeSpeed;
         }
 
         private void Update()

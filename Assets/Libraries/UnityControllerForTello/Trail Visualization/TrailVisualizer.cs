@@ -70,7 +70,6 @@ namespace UnityControllerForTello
                 else
                 {
                     Vector3 flightPointDif = trailPoints[trailPoints.Count - 1].transform.position - craftPosition;
-                    Debug.Log(flightPointDif.magnitude);
                     if (flightPointDif.magnitude > _minDeltaForPoint)
                     {
                         var trailPoint = InstantiateNewPoint(craftPosition);

@@ -89,6 +89,13 @@ namespace UnityControllerForTello
             }
             quadcopter.Initialize(_pilotInupts.GetInputValues);
             _waypointPilot.Initialize(quadcopter);
+
+            if(sceneType == SceneType.Simulation)
+            {
+                quadcopter.TakeOff();
+                //_waypointPilot.ActivateAutoPilot();
+              //  _waypointMission.BeginMission(_waypointPilot);
+            }
         }
 
 
