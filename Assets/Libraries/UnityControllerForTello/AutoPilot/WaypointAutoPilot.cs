@@ -161,6 +161,7 @@ namespace UnityControllerForTello
                 var distToFinalTarget = Vector3.Distance(quadToControl.GetGameObject().transform.position, currentWaypoint.transform.position);
                 if (distToFinalTarget < _achieveTargetDist && !atWaypoint)
                 {
+                    (quadToControl as SimulationQuadcopter).ResetOffset();
                     atWaypoint = true;
                     onWaypointAchieved?.Invoke(currentWaypoint);
                 }

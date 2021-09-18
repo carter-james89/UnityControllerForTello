@@ -15,6 +15,9 @@ namespace UnityControllerForTello
         /// </summary>
         protected IInputs.FlightControlValues currentInputs;
 
+        [SerializeField]
+        protected GameObject groundSensorPoint;
+
         /// <summary>
         /// Used to visalize the trail the quadcopter has traveled
         /// </summary>
@@ -91,6 +94,43 @@ namespace UnityControllerForTello
             }
         }
 
+        //public float deltaHeight;
+        //private float _prevHeight = 0;
+        //[SerializeField]
+        //private float heightOffset = 0;
+        //[SerializeField]
+        //private float _elvInput;
+
+        //public void SetVirtualPosition(Vector2 xzPos, float height, Quaternion calculatedRotation)
+        //{
+        //    deltaHeight = _prevHeight - height;
+        //    _prevHeight = height;
+        //    _elvInput = currentInputs.throttle;
+
+        //  //  var tempPos = transform.position;
+        ////    float calculatedHeight = height;
+        //    if (Math.Abs(deltaHeight) > .1)
+        //    {
+        //        if (Math.Abs(currentInputs.throttle) < .05)
+        //        {
+        //            heightOffset += deltaHeight;
+        //        }
+        //       //height + heightOffset;
+        //    }
+
+        //    transform.position = new Vector3(xzPos.x, height + heightOffset, xzPos.y);
+        //    transform.rotation = calculatedRotation;
+
+        //    var newGroundSensorPoint = Instantiate(groundSensorPoint);
+        //    newGroundSensorPoint.transform.position = transform.position + (Vector3.down * height);
+        //    Debug.DrawRay(transform.position, transform.TransformDirection(Vector3.down) * height, Color.yellow);
+        //    OnTransformUpdated();
+        //}
+        //public void ResetOffset()
+        //{
+        //    heightOffset = 0;
+        //}
+
         /// <summary>
         /// Proccess the inputs from either <see cref="defaultInputSource"/> or <see cref="overrideInputSource"/>
         /// Also executes commands
@@ -104,21 +144,21 @@ namespace UnityControllerForTello
               defaultInputs.roll != 0 ||
                defaultInputs.throttle != 0 ||
                defaultInputs.takeOff ||
-               defaultInputs.land )
+               defaultInputs.land)
             {
-                if(overrideInputSource != null)
+                if (overrideInputSource != null)
                 {
                     Debug.LogWarning("Inputs detected from Default Input Source, borting override");
                     abort?.Invoke();
-                    if(overrideInputSource != null)
+                    if (overrideInputSource != null)
                     {
                         overrideInputSource = null;
                         Debug.LogWarning("RemoveInputOverride was not removed via Abort, this should have been done by the Action supplied to OverrideInputSource");
-                    }                  
+                    }
                 }
             }
 
-            currentInputs = overrideInputSource == null ? _headLessMode ? ConvertToHeadlessInputs(defaultInputs):  defaultInputs : overrideInputSource.Invoke();
+            currentInputs = overrideInputSource == null ? _headLessMode ? ConvertToHeadlessInputs(defaultInputs) : defaultInputs : overrideInputSource.Invoke();
             if (currentInputs.takeOff && _flightStatus == IQuadcopter.FlightStatus.PreLaunch)
             {
                 TakeOff();

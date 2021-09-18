@@ -29,16 +29,76 @@ namespace UnityControllerForTello
 
         public float timeSpeed = 1;
 
+
+
         public override void Initialize(Func<IInputs.FlightControlValues> defaultInputSource)
         {
             base.Initialize(defaultInputSource);
-            rigidBody = GetComponent<Rigidbody>();
+
+            var physicsCalculator = new GameObject("Simulation Physics Simulation");
+            rigidBody = physicsCalculator.AddComponent<Rigidbody>();
 
             Time.timeScale = timeSpeed;
         }
 
+        public float deltaHeight;
+        private float _prevHeight = 0;
+        [SerializeField]
+        private float heightOffset = 0;
+
+        public float elvInput;
+
+        public void ResetOffset()
+        {
+            heightOffset = 0;
+        }
+
         private void Update()
         {
+            RaycastHit hit;
+            // Does the ray intersect any objects excluding the player layer
+            if (Physics.Raycast(rigidBody.transform.position, rigidBody.transform.TransformDirection(Vector3.down), out hit, Mathf.Infinity))
+            {
+                Debug.DrawRay(rigidBody.transform.position, transform.TransformDirection(Vector3.down) * hit.distance, Color.yellow);
+            }
+         
+            deltaHeight = _prevHeight - hit.distance;
+            _prevHeight = hit.distance;
+            elvInput = currentInputs.throttle;
+
+            var tempPos = rigidBody.transform.position;
+
+            if (Math.Abs(deltaHeight) > .1 )
+            {
+               if( Math.Abs(currentInputs.throttle) < .05)
+                {
+                    heightOffset += deltaHeight;
+                }
+                tempPos.y = hit.distance + heightOffset;
+
+
+                Debug.Log("Delta Height " + deltaHeight);
+               // Debug.Log(hit.distance);
+               
+               // Debug.Log("height offset " + heightOffset);
+              //  Debug.Log("suggested height " + (hit.distance + deltaHeight));
+            }
+
+            var newGroundSensorPoint = Instantiate(groundSensorPoint);
+            newGroundSensorPoint.transform.position = transform.position + (Vector3.down * hit.distance);
+  
+            //if(hit.distance > .3f)
+            //{
+             //   tempPos.y = hit.distance + heightOffset;
+            //}
+            //else
+            //{
+            //    Debug.Log("emergency height");
+            //    tempPos.y = hit.distance;
+            //}
+            transform.position = tempPos;
+            //Debug.Log("actual height " + transform.position.y);
+            transform.rotation = rigidBody.transform.rotation;
             ProcessInputs();
         }
 
@@ -55,19 +115,19 @@ namespace UnityControllerForTello
                 rigidBody.AddForce(transform.up * 9.81f);
                 bool receivingInput = false;
                 var pitchInput = currentInputs.pitch;
-                rigidBody.AddForce(transform.forward * pitchInput);
+                rigidBody.AddForce(rigidBody.transform.forward * pitchInput);
                 if (System.Math.Abs(pitchInput) > 0)
                 {
                     receivingInput = true;
                 }
                 var elvInput = currentInputs.throttle;
-                rigidBody.AddForce(transform.up * elvInput);
+                rigidBody.AddForce(rigidBody.transform.up * elvInput);
                 if (System.Math.Abs(elvInput) > 0)
                 {
                     receivingInput = true;
                 }
                 var rollInput = currentInputs.roll;
-                rigidBody.AddForce(transform.right * rollInput);
+                rigidBody.AddForce(rigidBody.transform.right * rollInput);
                 if (System.Math.Abs(rollInput) > 0)
                 {
 
@@ -75,7 +135,7 @@ namespace UnityControllerForTello
                 }
 
                 var yawInput = currentInputs.yaw;
-                rigidBody.AddTorque(transform.up * yawInput);
+                rigidBody.AddTorque(rigidBody.transform.up * yawInput);
                 if (System.Math.Abs(yawInput) > 0)
                 {
 
@@ -92,6 +152,7 @@ namespace UnityControllerForTello
                     rigidBody.drag = drag;
                     rigidBody.angularDrag = drag * .9f;
                 }
+
                 OnTransformUpdated();
             }
         }
@@ -107,8 +168,8 @@ namespace UnityControllerForTello
         public override void TakeOff()
         {
             Debug.Log("Simulator TakeOff");
-            transform.position += new Vector3(0, .8f, 0);
-            gameObject.GetComponent<Rigidbody>().useGravity = true;
+            rigidBody.transform.position += new Vector3(0, .8f, 0);
+            rigidBody.useGravity = true;
             SetHomePoint(transform.position);
             _flightStatus = IQuadcopter.FlightStatus.Flying;
         }

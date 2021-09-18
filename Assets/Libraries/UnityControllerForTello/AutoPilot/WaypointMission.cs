@@ -60,6 +60,7 @@ public class WaypointMission : MonoBehaviour
     private void OnQuadcopterAtTarget(Waypoint targetTransform)
     {
         Debug.Log("Quad at Waypoint : " + _waypointCount);
+  
         if (_waypointCount != _waypoints.Count )
         {
             Debug.Log("Set Next Waypoint : " + _waypoints[_waypointCount].name);
