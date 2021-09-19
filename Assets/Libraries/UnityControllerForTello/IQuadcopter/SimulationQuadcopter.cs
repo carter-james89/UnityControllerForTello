@@ -41,17 +41,17 @@ namespace UnityControllerForTello
             Time.timeScale = timeSpeed;
         }
 
-        public float deltaHeight;
-        private float _prevHeight = 0;
-        [SerializeField]
-        private float heightOffset = 0;
+        //public float deltaHeight;
+        //private float _prevHeight = 0;
+        //[SerializeField]
+        //private float heightOffset = 0;
 
-        public float elvInput;
+        //public float elvInput;
 
-        public void ResetOffset()
-        {
-            heightOffset = 0;
-        }
+        //public void ResetOffset()
+        //{
+        //    heightOffset = 0;
+        //}
 
         private void Update()
         {
@@ -61,44 +61,27 @@ namespace UnityControllerForTello
             {
                 Debug.DrawRay(rigidBody.transform.position, transform.TransformDirection(Vector3.down) * hit.distance, Color.yellow);
             }
-         
-            deltaHeight = _prevHeight - hit.distance;
-            _prevHeight = hit.distance;
-            elvInput = currentInputs.throttle;
+            SetVirtualPosition(new Vector3(rigidBody.transform.position.x, rigidBody.transform.position.z), hit.distance,rigidBody.transform.rotation, rigidBody.velocity.y);
+            //deltaHeight = _prevHeight - hit.distance;
+            //_prevHeight = hit.distance;
+            //elvInput = currentInputs.throttle;
 
-            var tempPos = rigidBody.transform.position;
+            //var tempPos = rigidBody.transform.position;
 
-            if (Math.Abs(deltaHeight) > .1 )
-            {
-               if( Math.Abs(currentInputs.throttle) < .05)
-                {
-                    heightOffset += deltaHeight;
-                }
-                tempPos.y = hit.distance + heightOffset;
-
-
-                Debug.Log("Delta Height " + deltaHeight);
-               // Debug.Log(hit.distance);
-               
-               // Debug.Log("height offset " + heightOffset);
-              //  Debug.Log("suggested height " + (hit.distance + deltaHeight));
-            }
-
-            var newGroundSensorPoint = Instantiate(groundSensorPoint);
-            newGroundSensorPoint.transform.position = transform.position + (Vector3.down * hit.distance);
-  
-            //if(hit.distance > .3f)
+            //if (Math.Abs(deltaHeight) > .1)
             //{
-             //   tempPos.y = hit.distance + heightOffset;
+            //    if (Math.Abs(currentInputs.throttle) < .05)
+            //    {
+            //        heightOffset += deltaHeight;
+            //    }
+            //    tempPos.y = hit.distance + heightOffset;
             //}
-            //else
-            //{
-            //    Debug.Log("emergency height");
-            //    tempPos.y = hit.distance;
-            //}
-            transform.position = tempPos;
-            //Debug.Log("actual height " + transform.position.y);
-            transform.rotation = rigidBody.transform.rotation;
+
+            //var newGroundSensorPoint = Instantiate(groundSensorPoint);
+            //newGroundSensorPoint.transform.position = transform.position + (Vector3.down * hit.distance);
+
+            //transform.position = tempPos;
+            //transform.rotation = rigidBody.transform.rotation;
             ProcessInputs();
         }
 
@@ -169,6 +152,9 @@ namespace UnityControllerForTello
         {
             Debug.Log("Simulator TakeOff");
             rigidBody.transform.position += new Vector3(0, .8f, 0);
+            transform.position = rigidBody.transform.position;
+            Update();
+            ResetKnownOffset();
             rigidBody.useGravity = true;
             SetHomePoint(transform.position);
             _flightStatus = IQuadcopter.FlightStatus.Flying;

@@ -108,7 +108,7 @@ namespace UnityControllerForTello
             Debug.Log("Tello State Updated : " + newState);
             if (newState == Tello.ConnectionState.Connected)
             {
-                Debug.Log("Connected to Tello, please wait for camera feed");
+               // Debug.Log("Connected to Tello, please wait for camera feed " + Tello.state.);
                 Tello.setPicVidMode(1); // 0: picture, 1: video
                 Tello.setVideoBitRate((int)TelloController.VideoBitRate.VideoBitRateAuto);
                 Tello.requestIframe();
@@ -184,7 +184,7 @@ namespace UnityControllerForTello
             var deltaRawPosition = _prevRawPosition - rawPosition;
             _prevRawPosition = rawPosition;
 
-            if (flymode == 6 && flying || deltaRawPosition.magnitude > 1)
+            if (flymode == 6 && flying)// || deltaRawPosition.magnitude > 1)
             {
                 Debug.Log("launch complete");
                 _trackingFoundOffset = new Vector3(posX, posY, posZ);
@@ -192,8 +192,9 @@ namespace UnityControllerForTello
                 SetSensorGround();
                 if (_takeOffGround)
                 {
-                    _takeOffGround.transform.position = transform.position - new Vector3(0, height * .1f, 0);
+                   // _takeOffGround.transform.position = transform.position - new Vector3(0, height * .1f, 0);
                 }
+                SetVirtualTelloPosition();
 
                 _elevationOffset = height * .1f;
                 SetHomePoint(new Vector3(0, height * .1f, 0));
@@ -235,6 +236,10 @@ namespace UnityControllerForTello
             posX = Tello.state.posY;
             posY = -Tello.state.posZ;
             posZ = Tello.state.posX;
+
+            verticalSpeed = state.verticalSpeed;
+
+            velY = state.velY;
 
             rawPosition = new Vector3(posX, posY, posZ);
 
@@ -282,6 +287,9 @@ namespace UnityControllerForTello
         public Vector3 rawPosition;
         private Vector3 _prevRawPosition;
 
+        public int verticalSpeed { get; private set; }
+        public float velY { get; private set; }
+
         /// <summary>
         /// Set the position of the virtual Tello in the Unity environment
         /// </summary>
@@ -298,12 +306,16 @@ namespace UnityControllerForTello
             //valid tello frame
             if (Mathf.Abs(xDif) < 2 & Mathf.Abs(yDif) < 2 & Mathf.Abs(zDif) < 2)
             {
-                transform.position = adjustedPosition;
-               // transform.position += new Vector3(0, _elevationOffset, 0);
                 yaw = yaw * (180 / Mathf.PI);
                 pitch = (pitch * (180 / Mathf.PI));
                 roll = roll * (180 / Mathf.PI);
-                transform.localEulerAngles = new Vector3(-pitch, yaw, roll);
+                SetVirtualPosition(new Vector2(adjustedPosition.x, adjustedPosition.z), height * .1f, Quaternion.Euler(new Vector3(-pitch, yaw, roll)),vertSpeed);
+              //  transform.position = adjustedPosition;
+               // transform.position += new Vector3(0, _elevationOffset, 0);
+                //yaw = yaw * (180 / Mathf.PI);
+                //pitch = (pitch * (180 / Mathf.PI));
+                //roll = roll * (180 / Mathf.PI);
+                //transform.localEulerAngles = new Vector3(-pitch, yaw, roll);
 
                 OnTransformUpdated();
             }
@@ -358,8 +370,17 @@ namespace UnityControllerForTello
         protected override void OnDestroy()
         {
             base.OnDestroy();
+            if(connectionState == Tello.ConnectionState.Connecting)
+            {
+                //Tello.stopConnecting();
+            }
             Tello.onConnection -= Tello_onStateChanged;
             Tello.onUpdate -= Tello_onUpdate;
+            //if(connectionState == Tello.ConnectionState.Connected)
+            //{
+            //   Tello.sto
+            //}
+            Tello.stopConnecting();
         }
 
         public override bool IsTracking()

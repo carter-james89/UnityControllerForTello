@@ -10,16 +10,30 @@ public class WaypointMission : MonoBehaviour
 
     public Waypoint currentWaypoint { get; private set; }
 
+    public Waypoint startWaypoint;
+
     private WaypointAutoPilot _autoPilot;
 
     [SerializeField]
     private bool _loopMission;
 
+    public bool IsFinalWaypoint(Waypoint waypointToCheck)
+    {
+        if(waypointToCheck == _waypoints[_waypoints.Count - 1])
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
     public bool missionActive { get; private set; } = false;
 
     private int _waypointCount;
 
-    public void BeginMission(WaypointAutoPilot autoPilot)
+    public void OnMissionBegun(WaypointAutoPilot autoPilot)
     {
         if (!autoPilot)
         {
@@ -34,7 +48,12 @@ public class WaypointMission : MonoBehaviour
         _autoPilot = autoPilot;
         _autoPilot.onWaypointAchieved += OnQuadcopterAtTarget;
         _autoPilot.onWaypointSet += OnNewWaypointSet;
-        HeadToNextWaypoint();
+        if (startWaypoint)
+        {
+            autoPilot.SetNewWaypoint(startWaypoint);
+        }
+        else
+            HeadToNextWaypoint();
     }
 
     public void EndMission()
@@ -50,7 +69,7 @@ public class WaypointMission : MonoBehaviour
 
     private void OnNewWaypointSet(Waypoint newWaypointSet)
     {
-        if (missionActive && newWaypointSet != currentWaypoint)
+        if (missionActive && newWaypointSet != currentWaypoint && newWaypointSet != startWaypoint)
         {
             Debug.Log("A waypoint has been set from outside the Mission : " + newWaypointSet);
             EndMission();
@@ -60,8 +79,8 @@ public class WaypointMission : MonoBehaviour
     private void OnQuadcopterAtTarget(Waypoint targetTransform)
     {
         Debug.Log("Quad at Waypoint : " + _waypointCount);
-  
-        if (_waypointCount != _waypoints.Count )
+
+        if (_waypointCount != _waypoints.Count)
         {
             Debug.Log("Set Next Waypoint : " + _waypoints[_waypointCount].name);
             HeadToNextWaypoint();
@@ -78,7 +97,7 @@ public class WaypointMission : MonoBehaviour
             {
                 EndMission();
             }
-        }    
+        }
     }
 
     private void HeadToNextWaypoint()

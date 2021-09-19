@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -94,12 +95,111 @@ namespace UnityControllerForTello
             }
         }
 
-        //public float deltaHeight;
-        //private float _prevHeight = 0;
-        //[SerializeField]
-        //private float heightOffset = 0;
-        //[SerializeField]
-        //private float _elvInput;
+        public float deltaHeight;
+        private float _prevHeight = 0;
+        [SerializeField]
+        private float heightOffset = 0;
+        [SerializeField]
+        private float elvInput;
+
+        [SerializeField]
+        private float assumedHeightOffset = 0;
+
+        public float vertSpeed;
+
+        private List<GameObject> sensorPoints;
+
+        public void SetVirtualPosition(Vector2 xzPos, float height, Quaternion calculatedRotation, float vertSpeed)
+        {
+            float floatHeight = (float)Math.Round(height, 1);
+            //Debug.Log("Recording Static Height Delta Change " + floatHeight);
+            //RaycastHit hit;
+            //// Does the ray intersect any objects excluding the player layer
+            //if (Physics.Raycast(rigidBody.transform.position, rigidBody.transform.TransformDirection(Vector3.down), out hit, Mathf.Infinity))
+            //{
+            //    Debug.DrawRay(rigidBody.transform.position, transform.TransformDirection(Vector3.down) * hit.distance, Color.yellow);
+            //}
+            //Debug.Log(height);
+            this.vertSpeed = vertSpeed;
+
+            deltaHeight = _prevHeight - floatHeight;
+            _prevHeight = floatHeight;
+            elvInput = currentInputs.throttle;
+
+            var tempPos = new Vector3(xzPos.x, floatHeight + heightOffset, xzPos.y);// rigidBody.transform.position;
+
+            var newGroundSensorPoint = CreateSensorPoint();
+
+            if (_flightStatus == IQuadcopter.FlightStatus.Flying)
+                if (Math.Abs(deltaHeight) > .1 && Math.Abs(elvInput) <= .05f)
+                {
+                    Debug.Log("Known height updated " + deltaHeight);
+                    // if (Math.Abs(currentInputs.throttle) < .05)
+                    // {
+                    heightOffset += deltaHeight;
+                    // }
+                    tempPos.y = floatHeight + heightOffset + assumedHeightOffset;
+                }
+                else if (Math.Abs(elvInput) <= .05f)//Math.Abs(vertSpeed) <= .1 && Math.Abs(elvInput) <= .05f)// && Math.Abs(deltaHeight) > 0)
+                {
+                    assumedHeightOffset += deltaHeight;
+                    tempPos.y = floatHeight + heightOffset + assumedHeightOffset;
+                    Debug.Log("Recording Static Height Delta Change " + deltaHeight);
+                }
+
+            //else if (Math.Abs(vertSpeed) > .1 && Math.Abs(elvInput) > .1f)
+            //{
+            //    ResetOffset();
+            //}
+            //if (Math.Abs(currentInputs.throttle) < .05)
+            //{
+            //    heightOffset += deltaHeight;
+            //    tempPos.y = height + heightOffset;
+            //}
+
+            //var groundpoint = transform.position - (Vector3.down * tempPos.y);
+
+
+            transform.position = tempPos;
+
+            transform.rotation = calculatedRotation;
+
+
+            newGroundSensorPoint.transform.position = transform.position + (Vector3.down * height);
+
+            if (assumedHeightOffset > .1)
+                newGroundSensorPoint.GetComponent<MeshRenderer>().material.color = Color.red;
+
+            else if (heightOffset > .1)
+                newGroundSensorPoint.GetComponent<MeshRenderer>().material.color = Color.green;
+
+            if (Math.Abs(vertSpeed) > .1 || Math.Abs(elvInput) > .05f)
+            {
+                newGroundSensorPoint.GetComponent<MeshRenderer>().material.color = Color.black;
+            }
+        }
+
+        private GameObject CreateSensorPoint()
+        {
+            if (sensorPoints == null)
+            {
+                sensorPoints = new List<GameObject>();
+            }
+            var newGroundSensorPoint = Instantiate(groundSensorPoint);
+            sensorPoints.Add(newGroundSensorPoint);
+            return newGroundSensorPoint;
+        }
+        public void DestroySensorPoints()
+        {
+            if (sensorPoints != null)
+            {
+                foreach (var item in sensorPoints)
+                {
+                    item.SetActive(false);
+                }
+            }
+        }
+
 
         //public void SetVirtualPosition(Vector2 xzPos, float height, Quaternion calculatedRotation)
         //{
@@ -126,10 +226,15 @@ namespace UnityControllerForTello
         //    Debug.DrawRay(transform.position, transform.TransformDirection(Vector3.down) * height, Color.yellow);
         //    OnTransformUpdated();
         //}
-        //public void ResetOffset()
-        //{
-        //    heightOffset = 0;
-        //}
+        public void ResetOffset()
+        {
+            // heightOffset = 0;
+            assumedHeightOffset = 0;
+        }
+        public void ResetKnownOffset()
+        {
+            heightOffset = 0;
+        }
 
         /// <summary>
         /// Proccess the inputs from either <see cref="defaultInputSource"/> or <see cref="overrideInputSource"/>

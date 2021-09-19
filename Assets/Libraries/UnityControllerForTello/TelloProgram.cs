@@ -111,7 +111,7 @@ namespace UnityControllerForTello
             {
                 if (_waypointMission && _waypointMission.gameObject.activeInHierarchy)
                 {
-                    _waypointMission.BeginMission(_waypointPilot);
+                    _waypointPilot.BeginMission(_waypointMission);
                 }
             }
 

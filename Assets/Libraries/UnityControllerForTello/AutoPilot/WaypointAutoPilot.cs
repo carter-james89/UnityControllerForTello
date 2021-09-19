@@ -161,7 +161,12 @@ namespace UnityControllerForTello
                 var distToFinalTarget = Vector3.Distance(quadToControl.GetGameObject().transform.position, currentWaypoint.transform.position);
                 if (distToFinalTarget < _achieveTargetDist && !atWaypoint)
                 {
-                    (quadToControl as SimulationQuadcopter).ResetOffset();
+                    (quadToControl as Quadcopter).ResetOffset();
+                    (quadToControl as Quadcopter).ResetKnownOffset();
+                    if (currentMission.IsFinalWaypoint(currentWaypoint))
+                    {
+                        (quadToControl as Quadcopter).DestroySensorPoints();
+                    }
                     atWaypoint = true;
                     onWaypointAchieved?.Invoke(currentWaypoint);
                 }
@@ -191,6 +196,13 @@ namespace UnityControllerForTello
             {
                 Debug.LogWarning("Cannot set autopilot target before autopilot activatd, activate AutoPilot with 'P'");
             }
+        }
+
+        public WaypointMission currentMission { get; private set; }
+        public void BeginMission(WaypointMission newMission)
+        {
+            newMission.OnMissionBegun(this);
+            currentMission = newMission;
         }
     }
 }
